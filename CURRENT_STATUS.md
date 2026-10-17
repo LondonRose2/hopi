@@ -11,9 +11,9 @@ _Last updated: 2026-10-18 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 
 ## 📍 Where we are
 - **GitHub Repository Created:** [`https://github.com/LondonRose2/hopi`](https://github.com/LondonRose2/hopi) (pushed & tracked on `master`).
-- **Release APK Live on GitHub (v1.0.1):**
-  - **Direct Download Link:** [`https://github.com/LondonRose2/hopi/releases/download/v1.0.1/hopi.apk`](https://github.com/LondonRose2/hopi/releases/download/v1.0.1/hopi.apk) (10.14 MB).
-  - **Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.0.1`](https://github.com/LondonRose2/hopi/releases/tag/v1.0.1).
+- **Release APK Live on GitHub (v1.0.2):**
+  - **Direct Download Link:** [`https://github.com/LondonRose2/hopi/releases/download/v1.0.2/hopi.apk`](https://github.com/LondonRose2/hopi/releases/download/v1.0.2/hopi.apk) (10.44 MB).
+  - **Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.0.2`](https://github.com/LondonRose2/hopi/releases/tag/v1.0.2).
 - **Features Included:**
   - Floating Mochi Companion with native Android `SYSTEM_ALERT_WINDOW` overlay service.
   - In-app Permission Request Banner (`OverlayPermissionPrompt.tsx`) with 1-tap jump to Android's "Display over other apps" settings.
