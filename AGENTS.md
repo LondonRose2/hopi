@@ -1,0 +1,49 @@
+# Project Guidelines & Agent Instructions — Hopi
+
+> **CRITICAL INSTRUCTION FOR ALL AI AGENTS:**
+> At the start of every new session, you **MUST read both this file (`AGENTS.md`) and [`CURRENT_STATUS.md`](file:///c:/Users/Rachel/Documents/apps/hopi/CURRENT_STATUS.md)** before writing any code or proposing modifications.
+> - `AGENTS.md` contains the architectural boundaries, token file budgets, and technical invariants.
+> - `CURRENT_STATUS.md` contains the active decisions, current state, and immediate next steps.
+
+---
+
+## 1. Development Server & Environment
+- When running commands on Windows in PowerShell, use `npm.cmd` instead of `npm`.
+- All `npm.cmd install` commands must include `--ignore-scripts`.
+- Always verify dependencies before installation using `node ~/.gemini/config/scripts/verify-deps.js --package <name>`.
+- Development servers should bind to `--host 0.0.0.0` to enable mobile and multi-device LAN testing.
+
+---
+
+## 2. Table of Contents & Fast File Map
+To minimize exploration searches and save tokens, use this direct file map:
+
+```
+hopi/
+  AGENTS.md             # Project guidelines, file budgets, architecture & Table of Contents
+  CURRENT_STATUS.md     # Living handoff: status, active tasks, decisions & next steps
+  GEMINI.md             # Quick-reference orientation pointers for Gemini/Antigravity
+  .gitignore            # Git exclusion rules (build outputs, env files, node_modules)
+  .env.example          # Safe environment template (no real secrets)
+  src/
+    # [Domain directories and entrypoints scaffolded upon project specification]
+```
+*Note: As new features and directories are added, agents are required to register them here.*
+
+---
+
+## 3. Core Architectural & Security Invariants
+
+### 1. Token Protection & Strict File Budgets
+- **Pages / Views**: Maximum **100 lines**. Pages are top-level orchestrators; they wire hooks to subcomponents and must never contain dense inline UI layouts or multi-step logic.
+- **Components**: Soft ceiling **200 lines**, hard ceiling **300 lines**. Extract subviews into local subfolders as soon as a component exceeds 200 lines.
+- **Contexts & Stores**: Maximum **250 lines**. Split massive state files into domain-focused sub-contexts or custom hooks.
+
+### 2. Single Source of Truth for Domain Logic
+- Never write core domain calculations or business logic directly inside JSX/view components.
+- Keep calculations in canonical pure functions or custom hooks with dedicated unit tests.
+
+### 3. Day-1 Security & Package Policy
+- The pre-commit security hook in `.git/hooks/pre-commit` is immutable.
+- All external inputs at network/API boundaries must be validated with schema validation (e.g. Zod).
+- Use `crypto.randomUUID()` or `crypto.getRandomValues()` for unique IDs and tokens; never use `Math.random()`.
