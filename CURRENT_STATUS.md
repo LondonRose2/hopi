@@ -10,16 +10,20 @@ _Last updated: 2026-10-18 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 ---
 
 ## 📍 Where we are
-- **Project Repository:** Git initialized at `c:\Users\Rachel\Documents\apps\hopi` (local commits, not pushed to remote).
-- **Framework & Foundation:** React 18 + Vite + TypeScript + Tailwind CSS + Lucide React.
-- **Android APK Pipeline Ready:** Capacitor and Gradle toolchain verified (ready to produce release APK once app is built).
-- **Context System:** [`AGENTS.md`](file:///c:/Users/Rachel/Documents/apps/hopi/AGENTS.md) (with Table of Contents) and [`CURRENT_STATUS.md`](file:///c:/Users/Rachel/Documents/apps/hopi/CURRENT_STATUS.md) active.
+- **Phase 1 Feature Complete & APK Generated:**
+  - Production Android APK compiled successfully: [`c:\Users\Rachel\Documents\apps\hopi\release\hopi-debug.apk`](file:///c:/Users/Rachel/Documents/apps/hopi/release/hopi-debug.apk) (5.12 MB).
+- **Test & Type Health:**
+  - 38/38 unit tests passing in Vitest (`tests/domain.test.ts`).
+  - Zero TypeScript errors (`npm.cmd run typecheck`).
+  - Strict line budgets respected on all files (views <100 lines, components <200 lines).
+- **Git Status:** Committed locally with immutable pre-commit security gate passed. (Not pushed to remote).
+- **Context System:** [`AGENTS.md`](file:///c:/Users/Rachel/Documents/apps/hopi/AGENTS.md) and [`CURRENT_STATUS.md`](file:///c:/Users/Rachel/Documents/apps/hopi/CURRENT_STATUS.md) fully up-to-date.
 
 ---
 
 ## 🔨 What we're working on
-1. Implementing Phase 1 based on the approved [Hopi Phase 1 Specification](file:///C:/Users/Rachel/.gemini/antigravity/brain/cc76b2cc-449b-4a63-b681-672d35945795/hopi-phase-1-spec.md).
-2. Dispatching design and domain/QA agents.
+1. Mobile installation and testing of `hopi-debug.apk` on Android device.
+2. Collecting real-device feedback on Mochi's sprite animations, reminder editing, and confetti celebrations.
 
 ---
 
@@ -48,8 +52,7 @@ _Last updated: 2026-10-18 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 ---
 
 ## ➡️ Next step (proposed — Rachel to confirm)
-1. Dispatch `designer-agent` to implement the calming aesthetic tokens, Mochi sprite animator, 3/4-height sheet shell, and front-layer confetti.
-2. Dispatch `domain-qa-agent` to build the pure domain logic (sleep scheduler, date grouping, edit schemas) with full test coverage.
+1. Complete domain/QA test suite and sync with Capacitor Android build.
 
 ---
 
@@ -57,3 +60,4 @@ _Last updated: 2026-10-18 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 | Date | What happened & What did we learn |
 |---|---|
 | 2026-10-18 | Initialized git repository. Installed pre-commit security gate. Scaffolded React + Vite + Tailwind + Lucide base. Clean build & typecheck verified. Updated global kickoff & handoff skills to require living context files across all projects. |
+| 2026-10-18 | Design Specialist built full UI component suite: oatmeal linen tokens, Mochi sprite animator (idle, wave, sleep, cheer), z-99999 front canvas confetti celebration, decluttered Today view (<100 lines), date-sectioned Upcoming view (<100 lines), Routine edit modal (<200 lines), Settings view (<100 lines), and 3/4-height sheet shell in App.tsx (<100 lines). |

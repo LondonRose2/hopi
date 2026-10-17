@@ -1,24 +1,15 @@
+@import './tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-:root {
-  --c-bg: #0B131E;
-  --c-card-bg: #131D2A;
-  --c-card-border: #1E2D40;
-  --c-gold: #E5A93C;
-  --c-gold-hover: #F5B94E;
-  --c-divider: #1E2D40;
-  --c-cream: #F5EFE6;
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
 
 body {
   margin: 0;
   padding: 0;
   font-family: var(--font-sans);
   background-color: var(--c-bg);
-  color: #FFFFFF;
+  color: var(--c-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior-y: none;
@@ -32,14 +23,6 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--c-gold);
+  outline: 2px solid var(--c-accent);
   outline-offset: 2px;
-}
-
-.pb-safe {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4rem);
-}
-
-.bottom-nav-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0.5rem);
 }

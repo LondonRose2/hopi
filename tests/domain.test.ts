@@ -1,0 +1,369 @@
+import { describe, it, expect } from 'vitest';
+import {
+  isQuietHours,
+  parseTimeToMinutes,
+  formatDayHeader,
+  groupUpcomingTasksByDay,
+  reminderSchema,
+  settingsSchema,
+  validateReminder,
+  validateSettings,
+  safeValidateReminder,
+  safeValidateSettings,
+  DEFAULT_REMINDERS,
+  DEFAULT_SETTINGS,
+  UPLIFTING_VERSES,
+  getVerseForDate,
+  createDefaultReminders,
+  type Reminder,
+  type Settings,
+} from '../src/domain/reminders';
+
+describe('sleepSchedule domain logic', () => {
+  describe('parseTimeToMinutes', () => {
+    it('converts 00:00 to 0 minutes', () => {
+      expect(parseTimeToMinutes('00:00')).toBe(0);
+    });
+
+    it('converts 09:30 to 570 minutes', () => {
+      expect(parseTimeToMinutes('09:30')).toBe(570);
+    });
+
+    it('converts 23:59 to 1439 minutes', () => {
+      expect(parseTimeToMinutes('23:59')).toBe(1439);
+    });
+
+    it('throws an error for invalid time format or numbers', () => {
+      expect(() => parseTimeToMinutes('invalid')).toThrow();
+      expect(() => parseTimeToMinutes('25:00')).toThrow();
+      expect(() => parseTimeToMinutes('12:65')).toThrow();
+    });
+  });
+
+  describe('isQuietHours - Default sleep window (00:00 to 09:00)', () => {
+    const start = '00:00';
+    const end = '09:00';
+
+    it('is quiet at exact start (00:00)', () => {
+      expect(isQuietHours('00:00', start, end)).toBe(true);
+    });
+
+    it('is quiet at 00:01', () => {
+      expect(isQuietHours('00:01', start, end)).toBe(true);
+    });
+
+    it('is quiet at mid-sleep (04:30)', () => {
+      expect(isQuietHours('04:30', start, end)).toBe(true);
+    });
+
+    it('is quiet at 08:59 (one minute before waking up)', () => {
+      expect(isQuietHours('08:59', start, end)).toBe(true);
+    });
+
+    it('is NOT quiet at exact wake up time (09:00)', () => {
+      expect(isQuietHours('09:00', start, end)).toBe(false);
+    });
+
+    it('is NOT quiet during daytime (12:00, 15:30)', () => {
+      expect(isQuietHours('12:00', start, end)).toBe(false);
+      expect(isQuietHours('15:30', start, end)).toBe(false);
+    });
+
+    it('is NOT quiet late evening before midnight (23:59)', () => {
+      expect(isQuietHours('23:59', start, end)).toBe(false);
+    });
+  });
+
+  describe('isQuietHours - Midnight crossover window (22:00 to 07:00)', () => {
+    const start = '22:00';
+    const end = '07:00';
+
+    it('is NOT quiet just before sleep start (21:59)', () => {
+      expect(isQuietHours('21:59', start, end)).toBe(false);
+    });
+
+    it('is quiet at exact start (22:00)', () => {
+      expect(isQuietHours('22:00', start, end)).toBe(true);
+    });
+
+    it('is quiet late night before midnight (23:59)', () => {
+      expect(isQuietHours('23:59', start, end)).toBe(true);
+    });
+
+    it('is quiet at midnight boundary (00:00)', () => {
+      expect(isQuietHours('00:00', start, end)).toBe(true);
+    });
+
+    it('is quiet in early morning hours (03:30, 06:59)', () => {
+      expect(isQuietHours('03:30', start, end)).toBe(true);
+      expect(isQuietHours('06:59', start, end)).toBe(true);
+    });
+
+    it('is NOT quiet at exact wake up time (07:00)', () => {
+      expect(isQuietHours('07:00', start, end)).toBe(false);
+    });
+
+    it('is NOT quiet during afternoon (14:00)', () => {
+      expect(isQuietHours('14:00', start, end)).toBe(false);
+    });
+  });
+
+  describe('isQuietHours - Equal start and end', () => {
+    it('returns false when start and end are identical', () => {
+      expect(isQuietHours('08:00', '08:00', '08:00')).toBe(false);
+    });
+  });
+});
+
+describe('grouping domain logic', () => {
+  describe('formatDayHeader', () => {
+    it('formats 2025-01-30 as "Thu, Jan 30"', () => {
+      expect(formatDayHeader('2025-01-30')).toBe('Thu, Jan 30');
+    });
+
+    it('formats 2026-10-19 as "Mon, Oct 19"', () => {
+      expect(formatDayHeader('2026-10-19')).toBe('Mon, Oct 19');
+    });
+
+    it('throws error for malformed date string', () => {
+      expect(() => formatDayHeader('invalid-date')).toThrow();
+    });
+  });
+
+  describe('groupUpcomingTasksByDay', () => {
+    const today = '2025-01-29';
+
+    const sampleTasks: Reminder[] = [
+      {
+        id: 'task-past',
+        title: 'Yesterday task',
+        emoji: '🚶',
+        time: '10:00',
+        date: '2025-01-28',
+        completed: false,
+        category: 'walk',
+        recurring: 'once',
+      },
+      {
+        id: 'task-today',
+        title: 'Today task',
+        emoji: '💧',
+        time: '14:00',
+        date: '2025-01-29',
+        completed: false,
+        category: 'water',
+        recurring: 'daily',
+      },
+      {
+        id: 'task-upcoming-2',
+        title: 'Afternoon tea tomorrow',
+        emoji: '☕',
+        time: '15:00',
+        date: '2025-01-30',
+        completed: false,
+        category: 'rest',
+        recurring: 'daily',
+      },
+      {
+        id: 'task-upcoming-1',
+        title: 'Morning stretch tomorrow',
+        emoji: '🚶',
+        time: '08:00',
+        date: '2025-01-30',
+        completed: false,
+        category: 'walk',
+        recurring: 'daily',
+      },
+      {
+        id: 'task-upcoming-3',
+        title: 'Scripture Friday',
+        emoji: '📖',
+        time: '20:00',
+        date: '2025-01-31',
+        completed: false,
+        category: 'scripture',
+        recurring: 'weekdays',
+      },
+    ];
+
+    it('strictly excludes past and today tasks', () => {
+      const grouped = groupUpcomingTasksByDay(sampleTasks, today);
+      const allUpcoming = Object.values(grouped).flat();
+      expect(allUpcoming.some((t) => t.id === 'task-past')).toBe(false);
+      expect(allUpcoming.some((t) => t.id === 'task-today')).toBe(false);
+      expect(allUpcoming.length).toBe(3);
+    });
+
+    it('groups tasks under clean day headers like "Thu, Jan 30"', () => {
+      const grouped = groupUpcomingTasksByDay(sampleTasks, today);
+      expect(Object.keys(grouped)).toEqual(['Thu, Jan 30', 'Fri, Jan 31']);
+    });
+
+    it('sorts tasks within the same day chronologically by time', () => {
+      const grouped = groupUpcomingTasksByDay(sampleTasks, today);
+      const jan30Tasks = grouped['Thu, Jan 30'];
+      expect(jan30Tasks).toHaveLength(2);
+      expect(jan30Tasks[0].id).toBe('task-upcoming-1'); // 08:00
+      expect(jan30Tasks[1].id).toBe('task-upcoming-2'); // 15:00
+    });
+
+    it('returns an empty object if there are no upcoming tasks', () => {
+      const grouped = groupUpcomingTasksByDay(
+        [
+          {
+            id: 'task-today',
+            title: 'Today task',
+            emoji: '💧',
+            time: '14:00',
+            date: '2025-01-29',
+            completed: false,
+            category: 'water',
+            recurring: 'daily',
+          },
+        ],
+        today
+      );
+      expect(grouped).toEqual({});
+    });
+  });
+});
+
+describe('schemas and validation domain logic', () => {
+  it('validates a valid reminder', () => {
+    const valid: Reminder = {
+      id: 'rem-1',
+      title: 'Water break',
+      emoji: '💧',
+      time: '11:15',
+      date: '2026-10-18',
+      completed: false,
+      category: 'water',
+      recurring: 'daily',
+    };
+    expect(() => validateReminder(valid)).not.toThrow();
+    const result = safeValidateReminder(valid);
+    expect(result.success).toBe(true);
+    expect(reminderSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it('rejects reminder with invalid time format', () => {
+    const invalid = {
+      id: 'rem-2',
+      title: 'Water break',
+      emoji: '💧',
+      time: '25:00', // invalid hour
+      date: '2026-10-18',
+      completed: false,
+      category: 'water',
+      recurring: 'daily',
+    };
+    const result = safeValidateReminder(invalid);
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects reminder with invalid date format', () => {
+    const invalid = {
+      id: 'rem-3',
+      title: 'Water break',
+      emoji: '💧',
+      time: '10:00',
+      date: '10/18/2026', // invalid date format
+      completed: false,
+      category: 'water',
+      recurring: 'daily',
+    };
+    const result = safeValidateReminder(invalid);
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects reminder with invalid category', () => {
+    const invalid = {
+      id: 'rem-4',
+      title: 'Water break',
+      emoji: '💧',
+      time: '10:00',
+      date: '2026-10-18',
+      completed: false,
+      category: 'unknown_cat',
+      recurring: 'daily',
+    };
+    const result = safeValidateReminder(invalid);
+    expect(result.success).toBe(false);
+  });
+
+  it('validates valid settings', () => {
+    const settings: Settings = {
+      avatar: 'rabbit',
+      sleepStart: '00:00',
+      sleepEnd: '09:00',
+      encouragementsEnabled: true,
+      overlayEnabled: false,
+      notificationsEnabled: true,
+    };
+    expect(() => validateSettings(settings)).not.toThrow();
+    expect(settingsSchema.safeParse(settings).success).toBe(true);
+  });
+
+  it('rejects invalid settings', () => {
+    const invalidSettings = {
+      avatar: 'dog', // invalid avatar
+      sleepStart: '00:00',
+      sleepEnd: '09:00',
+      encouragementsEnabled: true,
+      overlayEnabled: false,
+      notificationsEnabled: true,
+    };
+    const result = safeValidateSettings(invalidSettings);
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('defaultData domain logic', () => {
+  it('default reminders all satisfy reminderSchema', () => {
+    expect(DEFAULT_REMINDERS.length).toBe(4);
+    for (const rem of DEFAULT_REMINDERS) {
+      expect(() => validateReminder(rem)).not.toThrow();
+    }
+  });
+
+  it('starter reminders contain water, walk, rest, and scripture', () => {
+    const categories = DEFAULT_REMINDERS.map((r) => r.category);
+    expect(categories).toContain('water');
+    expect(categories).toContain('walk');
+    expect(categories).toContain('rest');
+    expect(categories).toContain('scripture');
+
+    const emojis = DEFAULT_REMINDERS.map((r) => r.emoji);
+    expect(emojis).toContain('💧');
+    expect(emojis).toContain('🚶');
+    expect(emojis).toContain('☕');
+    expect(emojis).toContain('📖');
+  });
+
+  it('default settings satisfy settingsSchema', () => {
+    expect(() => validateSettings(DEFAULT_SETTINGS)).not.toThrow();
+    expect(DEFAULT_SETTINGS.sleepStart).toBe('00:00');
+    expect(DEFAULT_SETTINGS.sleepEnd).toBe('09:00');
+  });
+
+  it('uplifting verses has at least 10 verses with required fields', () => {
+    expect(UPLIFTING_VERSES.length).toBeGreaterThanOrEqual(10);
+    for (const verse of UPLIFTING_VERSES) {
+      expect(verse.id).toBeTruthy();
+      expect(verse.reference).toBeTruthy();
+      expect(verse.text).toBeTruthy();
+    }
+  });
+
+  it('getVerseForDate returns a valid verse deterministically', () => {
+    const v1 = getVerseForDate('2026-10-18');
+    const v2 = getVerseForDate('2026-10-18');
+    expect(v1).toEqual(v2);
+    expect(v1.text).toBeTruthy();
+  });
+
+  it('createDefaultReminders assigns the specified date', () => {
+    const reminders = createDefaultReminders('2026-11-01');
+    expect(reminders.every((r) => r.date === '2026-11-01')).toBe(true);
+  });
+});

@@ -34,9 +34,29 @@ hopi/
   src/
     main.tsx            # React root mount (<20 lines)
     app/
-      App.tsx           # Top-level shell (<100 lines), bottom navigation & view switcher
+      App.tsx           # 3/4-height sheet shell & companion header (<100 lines)
     styles/
-      index.css         # Tailwind directives, theme variables & safe-area utilities
+      index.css         # Tailwind base and safe-area utilities
+      tokens.css        # Oatmeal/rice linen palette, tokens & safe padding
+    features/
+      companion/
+        MochiAvatar.tsx # Sprite animator (idle, wave, sleep, cheer) (<200 lines)
+      reminders/
+        types.ts        # Reminder domain contracts & sample routines
+        components/
+          ConfettiCelebration.tsx # Front-layer canvas burst (z-99999) (<200 lines)
+          ReminderItem.tsx        # Pill card row with 1-tap check-off (<200 lines)
+          TodayRemindersView.tsx  # Decluttered 3-5 item today view (<100 lines)
+          UpcomingTasksView.tsx   # Date-sectioned forward agenda (<100 lines)
+          ReminderEditModal.tsx   # Routine editor with emoji picker (<200 lines)
+      settings/
+        types.ts        # Companion preferences & sleep schedule contracts
+        components/
+          SettingsView.tsx        # Sleep schedule & companion preferences (<100 lines)
+    domain/
+      reminders/        # Pure domain calculations (schemas, grouping, sleep schedule)
+  tests/
+    domain.test.ts      # Unit tests for domain calculations & invariants
 ```
 *Note: As new features and directories are added, agents are required to register them here.*
 

@@ -1,94 +1,95 @@
 import { useState } from 'react';
-import { Compass, Sparkles, FolderCheck, ShieldCheck } from 'lucide-react';
+import { Plus, Settings as SettingsIcon, ArrowLeft } from 'lucide-react';
+import { MochiAvatar, type MochiState } from '../features/companion/MochiAvatar';
+import { ConfettiCelebration } from '../features/reminders/components/ConfettiCelebration';
+import { TodayRemindersView } from '../features/reminders/components/TodayRemindersView';
+import { UpcomingTasksView } from '../features/reminders/components/UpcomingTasksView';
+import { ReminderEditModal } from '../features/reminders/components/ReminderEditModal';
+import { SettingsView } from '../features/settings/components/SettingsView';
+import { INITIAL_REMINDERS, type Reminder } from '../features/reminders/types';
+import { DEFAULT_SETTINGS, type AppSettings } from '../features/settings/types';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<'welcome' | 'status'>('welcome');
+  const [tab, setTab] = useState<'today' | 'upcoming' | 'settings'>('today');
+  const [mochiState, setMochiState] = useState<MochiState>('idle');
+  const [reminders, setReminders] = useState<Reminder[]>(INITIAL_REMINDERS);
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [activeItem, setActiveItem] = useState<Reminder | null>(null);
+  const [confettiKey, setConfettiKey] = useState(0);
+
+  const handleToggle = (id: string) => {
+    setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, completed: !r.completed } : r)));
+    const target = reminders.find((r) => r.id === id);
+    if (target && !target.completed) {
+      setConfettiKey((k) => k + 1);
+      setMochiState('cheer');
+      setTimeout(() => setMochiState('idle'), 2400);
+    }
+  };
+
+  const handleSave = (item: Reminder) => {
+    setReminders((prev) => {
+      const idx = prev.findIndex((r) => r.id === item.id);
+      return idx >= 0 ? prev.map((r) => (r.id === item.id ? item : r)) : [item, ...prev];
+    });
+  };
+
+  const todayReminders = reminders.filter((r) => r.date <= '2026-10-18');
+  const upcomingReminders = reminders.filter((r) => r.date > '2026-10-18');
 
   return (
-    <div className="min-h-screen bg-[#0B131E] text-white flex flex-col justify-between">
-      {/* Header */}
-      <header className="px-5 pt-8 pb-4 border-b border-[#1E2D40] bg-[#131D2A]/80 backdrop-blur-md sticky top-0 z-10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#E5A93C]/20 border border-[#E5A93C] flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-[#E5A93C]" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight text-white">Hopi</h1>
-              <p className="text-xs text-slate-400">Mobile Companion & Utility</p>
-            </div>
+    <div className="min-h-screen bg-linen text-warm-900 flex flex-col items-center justify-end relative">
+      <ConfettiCelebration triggerKey={confettiKey} />
+
+      {/* Floating Mochi Area */}
+      <div className="pt-8 pb-3 flex flex-col items-center text-center select-none z-10">
+        <MochiAvatar
+          state={mochiState}
+          size={110}
+          onClick={() => {
+            setMochiState((s) => (s === 'idle' ? 'wave' : 'idle'));
+            setTimeout(() => setMochiState('idle'), 2000);
+          }}
+        />
+        <p className="text-xs font-semibold text-warm-600 mt-1 tracking-wide">
+          {tab === 'settings' ? 'Companion Settings' : 'Mochi is here with you'}
+        </p>
+      </div>
+
+      {/* 3/4-Height Sheet Shell */}
+      <main className="w-full max-w-lg h-[75vh] bg-white rounded-t-[2.2rem] border-t border-x border-[#EAE2D5] shadow-sheet flex flex-col overflow-hidden z-20">
+        <header className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-warm-100">
+          <div className="w-9">
+            {tab === 'settings' ? (
+              <button onClick={() => setTab('today')} className="p-2 rounded-full hover:bg-warm-100 text-warm-600" aria-label="Back"><ArrowLeft className="w-5 h-5" /></button>
+            ) : (
+              <button onClick={() => { setActiveItem(null); setModalOpen(true); }} className="p-2 rounded-full bg-warm-100 hover:bg-warm-200 text-warm-700" aria-label="Add"><Plus className="w-4 h-4 stroke-[2.5]" /></button>
+            )}
           </div>
-          <span className="text-[11px] font-medium tracking-wide uppercase px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            Day 1 Ready
-          </span>
+
+          {tab !== 'settings' ? (
+            <div className="flex bg-warm-100/80 p-1 rounded-full border border-warm-200">
+              <button onClick={() => setTab('today')} className={`px-4 py-1 rounded-full text-xs font-semibold transition-all ${tab === 'today' ? 'bg-white text-warm-900 shadow-sm' : 'text-warm-500'}`}>Today</button>
+              <button onClick={() => setTab('upcoming')} className={`px-4 py-1 rounded-full text-xs font-semibold transition-all ${tab === 'upcoming' ? 'bg-white text-warm-900 shadow-sm' : 'text-warm-500'}`}>Upcoming</button>
+            </div>
+          ) : (
+            <span className="text-xs font-semibold text-warm-700 uppercase tracking-wider">Preferences</span>
+          )}
+
+          <div className="w-9 flex justify-end">
+            <button onClick={() => setTab((t) => (t === 'settings' ? 'today' : 'settings'))} className={`p-2 rounded-full transition-colors ${tab === 'settings' ? 'bg-warm-900 text-white' : 'hover:bg-warm-100 text-warm-600'}`} aria-label="Settings"><SettingsIcon className="w-4 h-4" /></button>
+          </div>
+        </header>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4 sheet-safe-bottom">
+          {tab === 'today' && <TodayRemindersView reminders={todayReminders} onToggle={handleToggle} onSelect={(r) => { setActiveItem(r); setModalOpen(true); }} />}
+          {tab === 'upcoming' && <UpcomingTasksView reminders={upcomingReminders} onToggle={handleToggle} onSelect={(r) => { setActiveItem(r); setModalOpen(true); }} />}
+          {tab === 'settings' && <SettingsView settings={settings} onUpdate={(u) => setSettings((s) => ({ ...s, ...u }))} />}
         </div>
-      </header>
-
-      {/* Main Content Area */}
-      <main className="flex-1 px-5 py-6 max-w-lg mx-auto w-full pb-safe">
-        {activeTab === 'welcome' ? (
-          <div className="space-y-4">
-            <div className="p-5 rounded-2xl bg-[#131D2A] border border-[#1E2D40] space-y-3">
-              <h2 className="text-base font-semibold text-white flex items-center gap-2">
-                <Compass className="w-5 h-5 text-[#E5A93C]" />
-                Ready for Features
-              </h2>
-              <p className="text-sm text-slate-300 leading-relaxed">
-                Hopi is scaffolded with modular architecture, token protection, and living context files.
-              </p>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-[#131D2A] border border-[#1E2D40] space-y-3">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                <FolderCheck className="w-4 h-4 text-emerald-400" />
-                Active Context Infrastructure
-              </h3>
-              <ul className="text-xs text-slate-300 space-y-2">
-                <li className="flex items-start gap-2">
-                  <span className="text-[#E5A93C] font-mono">AGENTS.md:</span> Table of Contents & Fast File Map
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-[#E5A93C] font-mono">CURRENT_STATUS.md:</span> Living handoff & session continuity
-                </li>
-              </ul>
-            </div>
-          </div>
-        ) : (
-          <div className="p-5 rounded-2xl bg-[#131D2A] border border-[#1E2D40] space-y-3">
-            <h2 className="text-base font-semibold text-white flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-emerald-400" />
-              Security & Guardrails
-            </h2>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Pre-commit gate installed, <code className="text-[#E5A93C]">--ignore-scripts</code> enforced, and clean zero-error type safety.
-            </p>
-          </div>
-        )}
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 inset-x-0 bg-[#131D2A]/90 backdrop-blur-lg border-t border-[#1E2D40] px-6 py-2 bottom-nav-safe">
-        <div className="max-w-md mx-auto flex items-center justify-around">
-          <button
-            onClick={() => setActiveTab('welcome')}
-            className={`flex flex-col items-center py-1 px-3 text-xs font-medium transition-colors ${
-              activeTab === 'welcome' ? 'text-[#E5A93C]' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Compass className="w-5 h-5 mb-1" />
-            Overview
-          </button>
-          <button
-            onClick={() => setActiveTab('status')}
-            className={`flex flex-col items-center py-1 px-3 text-xs font-medium transition-colors ${
-              activeTab === 'status' ? 'text-[#E5A93C]' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <ShieldCheck className="w-5 h-5 mb-1" />
-            System
-          </button>
-        </div>
-      </nav>
+      <ReminderEditModal isOpen={modalOpen} initialReminder={activeItem} onClose={() => setModalOpen(false)} onSave={handleSave} onDelete={(id) => setReminders((p) => p.filter((r) => r.id !== id))} />
     </div>
   );
 }
