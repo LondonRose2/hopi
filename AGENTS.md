@@ -55,6 +55,12 @@ hopi/
           SettingsView.tsx        # Sleep schedule & companion preferences (<100 lines)
     domain/
       reminders/        # Pure domain calculations (schemas, grouping, sleep schedule)
+    services/
+      nativeOverlay.ts  # Bridge to Android native floating overlay service (<50 lines)
+  android/
+    app/src/main/java/com/hopi/app/
+      FloatingMochiService.java # Android WindowManager overlay service (drags on home screen)
+      FloatingMochiPlugin.java  # Capacitor bridge for overlay start/stop/permissions
   tests/
     domain.test.ts      # Unit tests for domain calculations & invariants
 ```

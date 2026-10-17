@@ -11,7 +11,8 @@ _Last updated: 2026-10-18 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 
 ## 📍 Where we are
 - **Phase 1 Feature Complete & APK Generated:**
-  - Production Android APK compiled successfully: [`c:\Users\Rachel\Documents\apps\hopi\release\hopi-debug.apk`](file:///c:/Users/Rachel/Documents/apps/hopi/release/hopi-debug.apk) (5.12 MB).
+  - Production Android APK compiled successfully: [`c:\Users\Rachel\Documents\apps\hopi\release\hopi-debug.apk`](file:///c:/Users/Rachel/Documents/apps/hopi/release/hopi-debug.apk) (5.41 MB).
+  - Includes native Android `FloatingMochiService` with `SYSTEM_ALERT_WINDOW` for home-screen floating companion.
 - **Test & Type Health:**
   - 38/38 unit tests passing in Vitest (`tests/domain.test.ts`).
   - Zero TypeScript errors (`npm.cmd run typecheck`).
@@ -23,7 +24,7 @@ _Last updated: 2026-10-18 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 
 ## 🔨 What we're working on
 1. Mobile installation and testing of `hopi-debug.apk` on Android device.
-2. Collecting real-device feedback on Mochi's sprite animations, reminder editing, and confetti celebrations.
+2. Collecting real-device feedback on Mochi's sprite animations, home-screen overlay, reminder editing, and confetti celebrations.
 
 ---
 
@@ -52,7 +53,7 @@ _Last updated: 2026-10-18 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 ---
 
 ## ➡️ Next step (proposed — Rachel to confirm)
-1. Complete domain/QA test suite and sync with Capacitor Android build.
+1. Install `hopi-debug.apk` on Android phone and test home screen floating Mochi.
 
 ---
 
@@ -61,3 +62,4 @@ _Last updated: 2026-10-18 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 |---|---|
 | 2026-10-18 | Initialized git repository. Installed pre-commit security gate. Scaffolded React + Vite + Tailwind + Lucide base. Clean build & typecheck verified. Updated global kickoff & handoff skills to require living context files across all projects. |
 | 2026-10-18 | Design Specialist built full UI component suite: oatmeal linen tokens, Mochi sprite animator (idle, wave, sleep, cheer), z-99999 front canvas confetti celebration, decluttered Today view (<100 lines), date-sectioned Upcoming view (<100 lines), Routine edit modal (<200 lines), Settings view (<100 lines), and 3/4-height sheet shell in App.tsx (<100 lines). |
+| 2026-10-18 | Added native Android FloatingMochiService and Capacitor plugin with SYSTEM_ALERT_WINDOW permission for home-screen overlay. Recompiled production APK (5.41 MB). 38/38 unit tests pass. |
