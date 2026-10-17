@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/floating_root"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:padding="8dp">
+
+    <!-- Draggable Mochi Avatar -->
+    <ImageView
+        android:id="@+id/mochi_image"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:src="@drawable/mochi_avatar"
+        android:contentDescription="Mochi Companion"
+        android:scaleType="fitCenter" />
+
+    <!-- Interactive Speech Bubble -->
+    <TextView
+        android:id="@+id/mochi_speech_bubble"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:background="#FAF7F2"
+        android:textColor="#2D3748"
+        android:textSize="12sp"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:elevation="4dp"
+        android:text="Hi Rachel! 💧"
+        android:visibility="gone" />
+
+</LinearLayout>

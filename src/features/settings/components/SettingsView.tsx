@@ -1,5 +1,6 @@
 import { Moon, Sparkles, Bell, Layers, Check } from 'lucide-react';
 import type { AppSettings } from '../types';
+import { floatingOverlayService } from '../../../services/nativeOverlay';
 
 interface SettingsViewProps {
   settings: AppSettings;
@@ -20,7 +21,11 @@ export function SettingsView({ settings, onUpdate }: SettingsViewProps) {
         type="button"
         role="switch"
         aria-checked={value}
-        onClick={() => onUpdate({ [key]: !value })}
+        onClick={async () => {
+          const next = !value;
+          if (key === 'floatingCompanion') await floatingOverlayService.setEnabled(next);
+          onUpdate({ [key]: next });
+        }}
         className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 ${value ? 'bg-sage' : 'bg-warm-200'}`}
       >
         <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${value ? 'translate-x-5' : 'translate-x-0'}`} />
