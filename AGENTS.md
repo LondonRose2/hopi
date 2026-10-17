@@ -49,9 +49,11 @@ hopi/
         components/
           ConfettiCelebration.tsx # Front-layer canvas burst (z-99999) (<200 lines)
           ReminderItem.tsx        # Pill card row with 1-tap check-off (<200 lines)
-          TodayRemindersView.tsx  # Decluttered 3-5 item today view (<100 lines)
-          UpcomingTasksView.tsx   # Date-sectioned forward agenda (<100 lines)
-          ReminderEditModal.tsx   # Routine editor with emoji picker (<200 lines)
+          TodayRemindersView.tsx        # Tasks (top) & Routines (bottom) prioritized by due time (<100 lines)
+          TodayEmptyState.tsx           # Peaceful all-done placeholder (<50 lines)
+          CompletedRemindersSection.tsx # Collapsible completed items list (<50 lines)
+          UpcomingTasksView.tsx         # Date-sectioned forward agenda (<100 lines)
+          ReminderEditModal.tsx         # Native clock picker, task vs routine toggle & emoji grid (<200 lines)
       settings/
         types.ts        # Companion preferences & sleep schedule contracts
         components/

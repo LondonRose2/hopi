@@ -56,7 +56,7 @@ export function App() {
             {tab === 'settings' ? (
               <button onClick={() => setTab('today')} className="p-2 rounded-full hover:bg-warm-100 text-warm-600" aria-label="Back"><ArrowLeft className="w-5 h-5" /></button>
             ) : (
-              <button onClick={() => { setActiveItem(null); setModalOpen(true); }} className="p-2 rounded-full bg-warm-100 hover:bg-warm-200 text-warm-700" aria-label="Add"><Plus className="w-4 h-4 stroke-[2.5]" /></button>
+              <button onClick={() => { setActiveItem(null); setModalOpen(true); }} className="p-2 rounded-full bg-warm-100 hover:bg-warm-200 text-warm-700" aria-label="Add Item" title="Add Item"><Plus className="w-4 h-4 stroke-[2.5]" /></button>
             )}
           </div>
 

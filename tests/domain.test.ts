@@ -367,3 +367,43 @@ describe('defaultData domain logic', () => {
     expect(reminders.every((r) => r.date === '2026-11-01')).toBe(true);
   });
 });
+
+describe('display time conversion and sorting logic', () => {
+  it('converts 12-hour AM/PM to minutes since midnight', async () => {
+    const { parseDisplayTimeToMinutes } = await import('../src/features/reminders/types');
+    expect(parseDisplayTimeToMinutes('12:00 AM')).toBe(0);
+    expect(parseDisplayTimeToMinutes('08:30 AM')).toBe(510);
+    expect(parseDisplayTimeToMinutes('12:00 PM')).toBe(720);
+    expect(parseDisplayTimeToMinutes('02:15 PM')).toBe(855);
+    expect(parseDisplayTimeToMinutes('11:59 PM')).toBe(1439);
+  });
+
+  it('converts 12-hour AM/PM to 24-hour HH:mm string', async () => {
+    const { to24Hour } = await import('../src/features/reminders/types');
+    expect(to24Hour('08:30 AM')).toBe('08:30');
+    expect(to24Hour('12:00 PM')).toBe('12:00');
+    expect(to24Hour('02:15 PM')).toBe('14:15');
+    expect(to24Hour('12:30 AM')).toBe('00:30');
+  });
+
+  it('converts 24-hour HH:mm to 12-hour AM/PM string', async () => {
+    const { to12Hour } = await import('../src/features/reminders/types');
+    expect(to12Hour('08:30')).toBe('08:30 AM');
+    expect(to12Hour('12:00')).toBe('12:00 PM');
+    expect(to12Hour('14:15')).toBe('02:15 PM');
+    expect(to12Hour('00:30')).toBe('12:30 AM');
+  });
+
+  it('sorts reminders chronologically by time due', async () => {
+    const { parseDisplayTimeToMinutes } = await import('../src/features/reminders/types');
+    const items = [
+      { id: '1', time: '04:30 PM' },
+      { id: '2', time: '08:30 AM' },
+      { id: '3', time: '10:00 AM' },
+      { id: '4', time: '02:00 PM' },
+    ];
+    const sorted = [...items].sort((a, b) => parseDisplayTimeToMinutes(a.time) - parseDisplayTimeToMinutes(b.time));
+    expect(sorted.map((i) => i.id)).toEqual(['2', '3', '4', '1']);
+  });
+});
+

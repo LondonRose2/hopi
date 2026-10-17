@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { X, Trash2, Clock, Calendar } from 'lucide-react';
-import type { Reminder, RecurringType } from '../types';
-import { EMOJI_OPTIONS } from '../types';
+import { useState, useEffect, useRef } from 'react';
+import { X, Trash2, Clock, Calendar, CheckSquare, RefreshCw } from 'lucide-react';
+import type { Reminder, RecurringType, ItemType } from '../types';
+import { EMOJI_OPTIONS, to24Hour, to12Hour } from '../types';
 
 interface ReminderEditModalProps {
   isOpen: boolean;
@@ -22,7 +22,9 @@ export function ReminderEditModal({
   const [emoji, setEmoji] = useState('💧');
   const [time, setTime] = useState('09:00 AM');
   const [date, setDate] = useState('2026-10-18');
+  const [itemType, setItemType] = useState<ItemType>('task');
   const [recurring, setRecurring] = useState<RecurringType>('none');
+  const timeInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (initialReminder) {
@@ -30,17 +32,43 @@ export function ReminderEditModal({
       setEmoji(initialReminder.emoji);
       setTime(initialReminder.time);
       setDate(initialReminder.date);
-      setRecurring(initialReminder.recurring || 'none');
+      const isRoutine = initialReminder.itemType === 'routine' || (initialReminder.recurring && initialReminder.recurring !== 'none');
+      setItemType(isRoutine ? 'routine' : 'task');
+      setRecurring(initialReminder.recurring || (isRoutine ? 'daily' : 'none'));
     } else {
       setTitle('');
       setEmoji('💧');
       setTime('09:00 AM');
       setDate('2026-10-18');
+      setItemType('task');
       setRecurring('none');
     }
   }, [initialReminder, isOpen]);
 
   if (!isOpen) return null;
+
+  const handleTypeChange = (type: ItemType) => {
+    setItemType(type);
+    if (type === 'routine' && recurring === 'none') {
+      setRecurring('daily');
+    } else if (type === 'task') {
+      setRecurring('none');
+    }
+  };
+
+  const handleTimeClick = () => {
+    const el = timeInputRef.current;
+    if (!el) return;
+    try {
+      if (typeof (el as HTMLInputElement & { showPicker?: () => void }).showPicker === 'function') {
+        (el as HTMLInputElement & { showPicker: () => void }).showPicker();
+      } else {
+        el.focus();
+      }
+    } catch {
+      el.focus();
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +80,8 @@ export function ReminderEditModal({
       time,
       date,
       completed: initialReminder ? initialReminder.completed : false,
-      recurring,
+      itemType,
+      recurring: itemType === 'routine' ? recurring : 'none',
     });
     onClose();
   };
@@ -60,14 +89,14 @@ export function ReminderEditModal({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-warm-900/35 backdrop-blur-sm">
       <div
-        className="w-full max-w-md bg-white rounded-t-[2rem] sm:rounded-pebble border border-[#EAE2D5] shadow-sheet p-6 space-y-4"
+        className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-t-[2rem] sm:rounded-pebble border border-[#EAE2D5] shadow-sheet p-5 sm:p-6 space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="text-2xl p-1 bg-warm-100 rounded-full">{emoji}</span>
             <h3 className="text-base font-semibold text-warm-900">
-              {initialReminder ? 'Edit Routine' : 'Add New Routine'}
+              {initialReminder ? 'Edit Item' : 'Add New Item'}
             </h3>
           </div>
           <button
@@ -79,29 +108,53 @@ export function ReminderEditModal({
           </button>
         </div>
 
+        {/* Item Type Selector: Task vs Routine */}
+        <div className="flex p-1 bg-warm-100/90 rounded-xl border border-warm-200">
+          <button
+            type="button"
+            onClick={() => handleTypeChange('task')}
+            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+              itemType === 'task' ? 'bg-white text-warm-900 shadow-sm' : 'text-warm-500 hover:text-warm-700'
+            }`}
+          >
+            <CheckSquare className="w-3.5 h-3.5" />
+            <span>Task (To-Do)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTypeChange('routine')}
+            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+              itemType === 'routine' ? 'bg-white text-warm-900 shadow-sm' : 'text-warm-500 hover:text-warm-700'
+            }`}
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Daily Routine</span>
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
-            <label className="block text-xs font-medium text-warm-600 mb-1">Routine Title</label>
+            <label className="block text-xs font-medium text-warm-600 mb-1">Item Title</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., Mindful herbal tea break"
+              placeholder={itemType === 'task' ? 'e.g., Pick up groceries or call mom' : 'e.g., Mindful herbal tea break'}
               className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-warm-200 bg-warm-50/50 text-warm-900 placeholder-warm-400 focus:bg-white focus:border-terracotta outline-none transition-all"
             />
           </div>
 
           <div>
             <label className="block text-xs font-medium text-warm-600 mb-1">Choose Icon</label>
-            <div className="flex items-center gap-2 overflow-x-auto py-1">
+            <div className="grid grid-cols-7 sm:grid-cols-9 gap-1.5 max-h-32 overflow-y-auto p-1.5 rounded-xl border border-warm-200 bg-warm-50/40">
               {EMOJI_OPTIONS.map((item) => (
                 <button
                   type="button"
                   key={item}
                   onClick={() => setEmoji(item)}
-                  className={`w-9 h-9 rounded-full flex items-center justify-center text-base transition-transform shrink-0 ${
-                    emoji === item ? 'bg-terracotta-soft border-2 border-terracotta scale-105' : 'bg-warm-100 border border-warm-200 hover:scale-105'
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-transform ${
+                    emoji === item ? 'bg-terracotta-soft border-2 border-terracotta scale-105' : 'bg-white border border-warm-200 hover:bg-warm-100'
                   }`}
                 >
                   {item}
@@ -111,18 +164,25 @@ export function ReminderEditModal({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
+            {/* Native Clock Selector */}
             <div>
               <label className="block text-xs font-medium text-warm-600 mb-1 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-warm-400" /> Time
+                <Clock className="w-3.5 h-3.5 text-warm-400" /> Time (Clock)
               </label>
-              <input
-                type="text"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                placeholder="09:00 AM"
-                className="w-full px-3 py-2 text-xs rounded-xl border border-warm-200 bg-warm-50/50 text-warm-900 focus:bg-white focus:border-terracotta outline-none"
-              />
+              <div
+                onClick={handleTimeClick}
+                className="flex items-center justify-between px-3 py-2 text-xs rounded-xl border border-warm-200 bg-warm-50/50 hover:bg-white focus-within:bg-white focus-within:border-terracotta cursor-pointer transition-colors"
+              >
+                <input
+                  ref={timeInputRef}
+                  type="time"
+                  value={to24Hour(time)}
+                  onChange={(e) => setTime(to12Hour(e.target.value))}
+                  className="w-full bg-transparent text-xs text-warm-900 font-medium outline-none cursor-pointer"
+                />
+              </div>
             </div>
+
             <div>
               <label className="block text-xs font-medium text-warm-600 mb-1 flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5 text-warm-400" /> Date
@@ -131,28 +191,30 @@ export function ReminderEditModal({
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-warm-200 bg-warm-50/50 text-warm-900 focus:bg-white focus:border-terracotta outline-none"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-warm-200 bg-warm-50/50 text-warm-900 focus:bg-white focus:border-terracotta outline-none cursor-pointer"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-warm-600 mb-1">Repeat Cadence</label>
-            <div className="grid grid-cols-4 gap-1.5">
-              {(['none', 'daily', 'weekdays', 'weekly'] as const).map((opt) => (
-                <button
-                  type="button"
-                  key={opt}
-                  onClick={() => setRecurring(opt)}
-                  className={`py-1.5 px-2 text-xs rounded-lg capitalize font-medium border transition-colors ${
-                    recurring === opt ? 'bg-warm-900 text-white border-warm-900' : 'bg-warm-50 border-warm-200 text-warm-600 hover:bg-warm-100'
-                  }`}
-                >
-                  {opt}
-                </button>
-              ))}
+          {itemType === 'routine' && (
+            <div>
+              <label className="block text-xs font-medium text-warm-600 mb-1">Repeat Cadence</label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {(['daily', 'weekdays', 'weekly'] as const).map((opt) => (
+                  <button
+                    type="button"
+                    key={opt}
+                    onClick={() => setRecurring(opt)}
+                    className={`py-1.5 px-2 text-xs rounded-lg capitalize font-medium border transition-colors ${
+                      recurring === opt ? 'bg-warm-900 text-white border-warm-900' : 'bg-warm-50 border-warm-200 text-warm-600 hover:bg-warm-100'
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="flex items-center gap-3 pt-2">
             {initialReminder && onDelete && (
@@ -160,7 +222,7 @@ export function ReminderEditModal({
                 type="button"
                 onClick={() => { onDelete(initialReminder.id); onClose(); }}
                 className="p-2.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition-colors"
-                title="Delete reminder"
+                title="Delete item"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -169,7 +231,7 @@ export function ReminderEditModal({
               type="submit"
               className="flex-1 py-2.5 px-4 rounded-xl bg-terracotta hover:bg-terracotta-hover text-white text-xs font-semibold tracking-wide shadow-sm transition-all"
             >
-              {initialReminder ? 'Save Changes' : 'Create Reminder'}
+              {initialReminder ? 'Save Changes' : 'Add Item'}
             </button>
           </div>
         </form>
