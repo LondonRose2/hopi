@@ -23,13 +23,18 @@ export function SettingsView({ settings, onUpdate }: SettingsViewProps) {
         aria-checked={value}
         onClick={async () => {
           const next = !value;
-          if (key === 'floatingCompanion') await floatingOverlayService.setEnabled(next);
+          if (key === 'floatingCompanion') {
+            const isNative = floatingOverlayService.isNativePlatform();
+            if (next && isNative && !(await floatingOverlayService.isPermissionGranted())) {
+              await floatingOverlayService.requestPermission();
+            } else {
+              await floatingOverlayService.setEnabled(next);
+            }
+          }
           onUpdate({ [key]: next });
         }}
         className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 ${value ? 'bg-sage' : 'bg-warm-200'}`}
-      >
-        <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${value ? 'translate-x-5' : 'translate-x-0'}`} />
-      </button>
+      ><div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${value ? 'translate-x-5' : 'translate-x-0'}`} /></button>
     </div>
   );
 
@@ -67,21 +72,11 @@ export function SettingsView({ settings, onUpdate }: SettingsViewProps) {
         <div className="grid grid-cols-2 gap-2.5 pt-1">
           <div>
             <span className="text-[10px] uppercase font-bold text-warm-400 block mb-1">Rest From</span>
-            <input
-              type="text"
-              value={settings.sleepStart}
-              onChange={(e) => onUpdate({ sleepStart: e.target.value })}
-              className="w-full px-3 py-1.5 text-xs rounded-lg border border-warm-200 bg-warm-50/50 text-warm-900"
-            />
+            <input type="text" value={settings.sleepStart} onChange={(e) => onUpdate({ sleepStart: e.target.value })} className="w-full px-3 py-1.5 text-xs rounded-lg border border-warm-200 bg-warm-50/50 text-warm-900" />
           </div>
           <div>
             <span className="text-[10px] uppercase font-bold text-warm-400 block mb-1">Wake At</span>
-            <input
-              type="text"
-              value={settings.sleepEnd}
-              onChange={(e) => onUpdate({ sleepEnd: e.target.value })}
-              className="w-full px-3 py-1.5 text-xs rounded-lg border border-warm-200 bg-warm-50/50 text-warm-900"
-            />
+            <input type="text" value={settings.sleepEnd} onChange={(e) => onUpdate({ sleepEnd: e.target.value })} className="w-full px-3 py-1.5 text-xs rounded-lg border border-warm-200 bg-warm-50/50 text-warm-900" />
           </div>
         </div>
       </div>

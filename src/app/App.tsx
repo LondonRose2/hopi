@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Plus, Settings as SettingsIcon, ArrowLeft } from 'lucide-react';
 import { MochiAvatar, type MochiState } from '../features/companion/MochiAvatar';
+import { useOverlayCompanion } from '../features/companion/useOverlayCompanion';
+import { OverlayPermissionPrompt } from '../features/companion/OverlayPermissionPrompt';
 import { ConfettiCelebration } from '../features/reminders/components/ConfettiCelebration';
 import { TodayRemindersView } from '../features/reminders/components/TodayRemindersView';
 import { UpcomingTasksView } from '../features/reminders/components/UpcomingTasksView';
@@ -17,6 +19,7 @@ export function App() {
   const [modalOpen, setModalOpen] = useState(false);
   const [activeItem, setActiveItem] = useState<Reminder | null>(null);
   const [confettiKey, setConfettiKey] = useState(0);
+  const overlay = useOverlayCompanion({ enabled: settings.floatingCompanion });
 
   const handleToggle = (id: string) => {
     setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, completed: !r.completed } : r)));
@@ -83,6 +86,7 @@ export function App() {
         </header>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 sheet-safe-bottom">
+          {overlay.showPrompt && <OverlayPermissionPrompt onRequestPermission={overlay.requestPermission} onDismiss={overlay.dismissPrompt} />}
           {tab === 'today' && <TodayRemindersView reminders={todayReminders} onToggle={handleToggle} onSelect={(r) => { setActiveItem(r); setModalOpen(true); }} />}
           {tab === 'upcoming' && <UpcomingTasksView reminders={upcomingReminders} onToggle={handleToggle} onSelect={(r) => { setActiveItem(r); setModalOpen(true); }} />}
           {tab === 'settings' && <SettingsView settings={settings} onUpdate={(u) => setSettings((s) => ({ ...s, ...u }))} />}

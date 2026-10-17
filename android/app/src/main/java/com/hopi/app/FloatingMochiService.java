@@ -7,16 +7,18 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ServiceInfo;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.WindowManager;
 import android.widget.ImageView;
-import android.widget.TextView;
 import androidx.core.app.NotificationCompat;
 
 public class FloatingMochiService extends Service {
@@ -34,48 +36,88 @@ public class FloatingMochiService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        ensureForegroundNotification();
+        initOverlay();
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        ensureForegroundNotification();
+        if (floatingView == null) {
+            initOverlay();
+        }
+        return START_STICKY;
+    }
+
+    private void ensureForegroundNotification() {
         createNotificationChannel();
-        startForeground(NOTIFICATION_ID, createNotification());
-
-        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
-        floatingView = inflater.inflate(R.layout.floating_mochi_layout, null);
-
-        int layoutType = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                : WindowManager.LayoutParams.TYPE_PHONE;
-
-        params = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                layoutType,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                PixelFormat.TRANSLUCENT
-        );
-
-        params.gravity = Gravity.TOP | Gravity.START;
-        params.x = 40;
-        params.y = 250;
-
+        Notification notification = createNotification();
         try {
-            windowManager.addView(floatingView, params);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                // In Android 14+ (API 34+), foregroundServiceType=specialUse must be explicitly specified
+                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+            } else {
+                startForeground(NOTIFICATION_ID, notification);
+            }
         } catch (Exception e) {
             e.printStackTrace();
+            try {
+                startForeground(NOTIFICATION_ID, notification);
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private void initOverlay() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
             stopSelf();
             return;
         }
 
-        ImageView mochiImage = floatingView.findViewById(R.id.mochi_image);
-        setupTouchListener(mochiImage);
+        if (windowManager == null) {
+            windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        }
+
+        if (floatingView == null) {
+            LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
+            floatingView = inflater.inflate(R.layout.floating_mochi_layout, null);
+
+            int layoutType = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                    ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                    : WindowManager.LayoutParams.TYPE_PHONE;
+
+            params = new WindowManager.LayoutParams(
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    layoutType,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                    PixelFormat.TRANSLUCENT
+            );
+
+            params.gravity = Gravity.TOP | Gravity.START;
+            params.x = 40;
+            params.y = 250;
+
+            setupTouchListener(floatingView);
+
+            try {
+                windowManager.addView(floatingView, params);
+            } catch (Exception e) {
+                e.printStackTrace();
+                stopSelf();
+            }
+        }
     }
 
-    private void setupTouchListener(ImageView view) {
+    private void setupTouchListener(View view) {
+        final int touchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
+
         view.setOnTouchListener(new View.OnTouchListener() {
             private int initialX;
             private int initialY;
             private float initialTouchX;
             private float initialTouchY;
             private long touchStartTime;
+            private boolean isDragging;
 
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -86,21 +128,27 @@ public class FloatingMochiService extends Service {
                         initialTouchX = event.getRawX();
                         initialTouchY = event.getRawY();
                         touchStartTime = System.currentTimeMillis();
+                        isDragging = false;
                         return true;
 
                     case MotionEvent.ACTION_MOVE:
-                        params.x = initialX + (int) (event.getRawX() - initialTouchX);
-                        params.y = initialY + (int) (event.getRawY() - initialTouchY);
-                        windowManager.updateViewLayout(floatingView, params);
+                        float deltaX = event.getRawX() - initialTouchX;
+                        float deltaY = event.getRawY() - initialTouchY;
+                        if (!isDragging && (Math.abs(deltaX) > touchSlop || Math.abs(deltaY) > touchSlop)) {
+                            isDragging = true;
+                        }
+                        if (isDragging) {
+                            params.x = initialX + (int) deltaX;
+                            params.y = initialY + (int) deltaY;
+                            if (floatingView != null && windowManager != null) {
+                                windowManager.updateViewLayout(floatingView, params);
+                            }
+                        }
                         return true;
 
                     case MotionEvent.ACTION_UP:
-                        float diffX = Math.abs(event.getRawX() - initialTouchX);
-                        float diffY = Math.abs(event.getRawY() - initialTouchY);
                         long duration = System.currentTimeMillis() - touchStartTime;
-
-                        // Click detection: movement less than 10px and under 400ms
-                        if (diffX < 10 && diffY < 10 && duration < 400) {
+                        if (!isDragging && duration < 500) {
                             openHopiApp();
                         }
                         return true;
@@ -111,9 +159,26 @@ public class FloatingMochiService extends Service {
     }
 
     private void openHopiApp() {
-        Intent appIntent = new Intent(this, MainActivity.class);
-        appIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        startActivity(appIntent);
+        try {
+            Intent appIntent = new Intent(this, MainActivity.class);
+            appIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            
+            PendingIntent pendingIntent = PendingIntent.getActivity(
+                    this,
+                    0,
+                    appIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0)
+            );
+            pendingIntent.send();
+        } catch (Exception e) {
+            try {
+                Intent appIntent = new Intent(this, MainActivity.class);
+                appIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(appIntent);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
     }
 
     private void createNotificationChannel() {
@@ -154,6 +219,7 @@ public class FloatingMochiService extends Service {
             try {
                 windowManager.removeView(floatingView);
             } catch (Exception ignored) {}
+            floatingView = null;
         }
     }
 }

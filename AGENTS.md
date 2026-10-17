@@ -40,7 +40,9 @@ hopi/
       tokens.css        # Oatmeal/rice linen palette, tokens & safe padding
     features/
       companion/
-        MochiAvatar.tsx # Sprite animator (idle, wave, sleep, cheer) (<200 lines)
+        MochiAvatar.tsx             # Sprite animator (idle, wave, sleep, cheer) (<200 lines)
+        OverlayPermissionPrompt.tsx # Gentle permission onboarding card (<100 lines)
+        useOverlayCompanion.ts      # Permission state & auto-sync hook (<100 lines)
       reminders/
         types.ts        # Reminder domain contracts & sample routines
         components/

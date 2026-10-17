@@ -27,18 +27,32 @@ public class FloatingMochiPlugin extends Plugin {
 
     @PluginMethod
     public void requestOverlayPermission(PluginCall call) {
+        Context context = getContext();
+        boolean alreadyGranted = true;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!Settings.canDrawOverlays(getContext())) {
-                Intent intent = new Intent(
-                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        Uri.parse("package:" + getContext().getPackageName())
-                );
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                getContext().startActivity(intent);
+            alreadyGranted = Settings.canDrawOverlays(context);
+            if (!alreadyGranted) {
+                try {
+                    Intent intent = new Intent(
+                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:" + context.getPackageName())
+                    );
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(intent);
+                } catch (Exception e) {
+                    try {
+                        Intent fallbackIntent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
+                        fallbackIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        context.startActivity(fallbackIntent);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
             }
         }
         JSObject ret = new JSObject();
         ret.put("requested", true);
+        ret.put("alreadyGranted", alreadyGranted);
         call.resolve(ret);
     }
 
@@ -47,40 +61,44 @@ public class FloatingMochiPlugin extends Plugin {
         Context context = getContext();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
             // Need permission first
-            Intent intent = new Intent(
-                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:" + context.getPackageName())
-            );
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(intent);
-
-            JSObject ret = new JSObject();
-            ret.put("success", false);
-            ret.put("reason", "permission_needed");
-            call.resolve(ret);
+            requestOverlayPermission(call);
             return;
         }
 
-        Intent serviceIntent = new Intent(context, FloatingMochiService.class);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(serviceIntent);
-        } else {
-            context.startService(serviceIntent);
-        }
+        try {
+            Intent serviceIntent = new Intent(context, FloatingMochiService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent);
+            } else {
+                context.startService(serviceIntent);
+            }
 
-        JSObject ret = new JSObject();
-        ret.put("success", true);
-        call.resolve(ret);
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            call.resolve(ret);
+        } catch (Exception e) {
+            JSObject ret = new JSObject();
+            ret.put("success", false);
+            ret.put("error", e.getMessage());
+            call.resolve(ret);
+        }
     }
 
     @PluginMethod
     public void stopOverlay(PluginCall call) {
-        Context context = getContext();
-        Intent serviceIntent = new Intent(context, FloatingMochiService.class);
-        context.stopService(serviceIntent);
+        try {
+            Context context = getContext();
+            Intent serviceIntent = new Intent(context, FloatingMochiService.class);
+            context.stopService(serviceIntent);
 
-        JSObject ret = new JSObject();
-        ret.put("success", true);
-        call.resolve(ret);
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            call.resolve(ret);
+        } catch (Exception e) {
+            JSObject ret = new JSObject();
+            ret.put("success", false);
+            ret.put("error", e.getMessage());
+            call.resolve(ret);
+        }
     }
 }

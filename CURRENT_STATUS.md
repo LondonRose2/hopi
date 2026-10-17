@@ -11,11 +11,13 @@ _Last updated: 2026-10-18 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 
 ## 📍 Where we are
 - **GitHub Repository Created:** [`https://github.com/LondonRose2/hopi`](https://github.com/LondonRose2/hopi) (pushed & tracked on `master`).
-- **Release APK Live on GitHub:**
-  - Official Download Link: [`https://github.com/LondonRose2/hopi/releases/download/v1.0.0/hopi.apk`](https://github.com/LondonRose2/hopi/releases/download/v1.0.0/hopi.apk) (5.41 MB).
-  - Release Page: [`https://github.com/LondonRose2/hopi/releases/tag/v1.0.0`](https://github.com/LondonRose2/hopi/releases/tag/v1.0.0).
+- **Release APK Built & Staged:**
+  - Fresh compiled APK: `android/app/build/outputs/apk/debug/app-debug.apk` (10.14 MB) & `release/hopi-debug.apk`.
 - **Features Included:**
   - Floating Mochi Companion with native Android `SYSTEM_ALERT_WINDOW` overlay service.
+  - In-app Permission Request Banner (`OverlayPermissionPrompt.tsx`) with 1-tap jump to Android's "Display over other apps" settings.
+  - Automatic overlay start on app launch and automatic resumption when returning to Hopi from Android settings (`useOverlayCompanion.ts`).
+  - Android 14+ (API 34+) compatibility with `ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE` in `startForeground()` and `START_STICKY` service lifecycle.
   - 3/4-height sheet shell, Today Reminders (3-5 items + Load More), front-layer confetti, inline/modal reminder editing, upcoming tasks sectioned by day, sleep mode (12 AM - 9 AM).
 - **Test & Type Health:**
   - 38/38 unit tests passing in Vitest (`tests/domain.test.ts`).
@@ -26,7 +28,7 @@ _Last updated: 2026-10-18 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 ---
 
 ## 🔨 What we're working on
-1. Mobile installation and testing of `hopi.apk` on Android phone via direct link.
+1. Installing the updated APK on Android phone to verify the in-app permission banner and the floating home-screen avatar.
 2. Collecting real-device feedback on Mochi's sprite animations, home-screen overlay, reminder editing, and confetti celebrations.
 
 ---
@@ -39,6 +41,9 @@ _Last updated: 2026-10-18 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 ## ✅ Decisions made (and why)
 | Decision | Why |
 |---|---|
+| **In-App Permission Prompt (`OverlayPermissionPrompt.tsx`)** | Explains clearly to the user why Hopi needs "Display over other apps" with a 1-tap button to the exact Android settings page. |
+| **Lifecycle Resumption Hook (`useOverlayCompanion.ts`)** | Automatically detects when user enables permission and returns to the app, immediately activating the floating companion without manual toggles. |
+| **Android 14+ FGS Type Specification** | Modern Android (API 34+) strictly requires `FOREGROUND_SERVICE_TYPE_SPECIAL_USE` when calling `startForeground()`; fixes silent crash on newer Android phones. |
 | **Floating Mochi Companion (`SYSTEM_ALERT_WINDOW`)** | Floats on home screen and over apps so Rachel has her gentle companion always present. |
 | **3/4-Height Modal Sheet** | Opens when tapping Mochi; keeps the phone context visible while managing tasks. |
 | **Decluttered Today View (3–5 items max)** | Eliminates visual anxiety; remaining items accessible via clean "Load More" button. |
@@ -56,7 +61,7 @@ _Last updated: 2026-10-18 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 ---
 
 ## ➡️ Next step (proposed — Rachel to confirm)
-1. Install `hopi-debug.apk` on Android phone and test home screen floating Mochi.
+1. Install updated `hopi-debug.apk` on Android phone, test 1-tap permission prompt, and confirm Mochi floating on screen.
 
 ---
 
@@ -66,3 +71,5 @@ _Last updated: 2026-10-18 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 | 2026-10-18 | Initialized git repository. Installed pre-commit security gate. Scaffolded React + Vite + Tailwind + Lucide base. Clean build & typecheck verified. Updated global kickoff & handoff skills to require living context files across all projects. |
 | 2026-10-18 | Design Specialist built full UI component suite: oatmeal linen tokens, Mochi sprite animator (idle, wave, sleep, cheer), z-99999 front canvas confetti celebration, decluttered Today view (<100 lines), date-sectioned Upcoming view (<100 lines), Routine edit modal (<200 lines), Settings view (<100 lines), and 3/4-height sheet shell in App.tsx (<100 lines). |
 | 2026-10-18 | Added native Android FloatingMochiService and Capacitor plugin with SYSTEM_ALERT_WINDOW permission for home-screen overlay. Recompiled production APK (5.41 MB). 38/38 unit tests pass. |
+| 2026-10-18 | Resolved avatar overlay crash on Android 14+ by supplying `FOREGROUND_SERVICE_TYPE_SPECIAL_USE` in `startForeground()`. Added `OverlayPermissionPrompt` and `useOverlayCompanion` for seamless 1-tap permission onboarding and automatic start upon returning from settings. Clean Gradle assembleDebug build (10.14 MB). |
+
