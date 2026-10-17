@@ -23,19 +23,24 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.TextView;
 import androidx.core.app.NotificationCompat;
 
 public class FloatingMochiService extends Service {
-    private WindowManager windowManager;
-    private View floatingView;
-    private ImageView mochiImage;
-    private WindowManager.LayoutParams params;
+    public static final String ACTION_SHOW_SPEECH = "com.hopi.app.ACTION_SHOW_SPEECH";
+    public static final String EXTRA_SPEECH_TEXT = "extra_speech_text";
     private static final String CHANNEL_ID = "hopi_companion_channel";
     private static final int NOTIFICATION_ID = 1001;
 
+    private WindowManager windowManager;
+    private View floatingView;
+    private ImageView mochiImage;
+    private TextView speechBubble;
+    private WindowManager.LayoutParams params;
+
     private enum AnimState { IDLE, WALK, WAVE, SLEEP }
     private AnimState animState = AnimState.IDLE;
-    private int currentFrame = 0;
+    private int currentFrame = 0, encouragementIndex = 0;
     private final Handler animHandler = new Handler(Looper.getMainLooper());
     private boolean isScreenOn = true;
 
@@ -54,32 +59,31 @@ public class FloatingMochiService extends Service {
         R.drawable.mochi_sleep_0, R.drawable.mochi_sleep_1, R.drawable.mochi_sleep_2, R.drawable.mochi_sleep_3,
         R.drawable.mochi_sleep_4, R.drawable.mochi_sleep_5, R.drawable.mochi_sleep_6, R.drawable.mochi_sleep_7
     };
+    private static final String[] ENCOURAGEMENTS = {
+        "You're doing wonderfully ✨", "Remember to drink water 💧", "Take a gentle breath 🌿", "Mochi is right here 🐰"
+    };
 
     private boolean isRestHours() {
         int hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
         return hour >= 0 && hour < 9;
     }
 
+    private final Runnable hideSpeechRunnable = () -> {
+        if (speechBubble != null) {
+            speechBubble.animate().alpha(0f).scaleX(0.8f).scaleY(0.8f).setDuration(220)
+                    .withEndAction(() -> { if (speechBubble != null) speechBubble.setVisibility(View.GONE); }).start();
+        }
+    };
+
     private final Runnable animRunnable = new Runnable() {
         @Override
         public void run() {
             if (mochiImage == null || !isScreenOn) return;
-
-            int[] frames;
-            int delayMs;
-            if (animState == AnimState.WALK) {
-                frames = WALK_FRAMES;
-                delayMs = 95;
-            } else if (animState == AnimState.WAVE) {
-                frames = WAVE_FRAMES;
-                delayMs = 140;
-            } else if (animState == AnimState.SLEEP || (animState == AnimState.IDLE && isRestHours())) {
-                frames = SLEEP_FRAMES;
-                delayMs = 280;
-            } else {
-                frames = IDLE_FRAMES;
-                delayMs = 160;
-            }
+            int[] frames = (animState == AnimState.WALK) ? WALK_FRAMES :
+                           (animState == AnimState.WAVE) ? WAVE_FRAMES :
+                           (animState == AnimState.SLEEP || (animState == AnimState.IDLE && isRestHours())) ? SLEEP_FRAMES : IDLE_FRAMES;
+            int delayMs = (animState == AnimState.WALK) ? 95 : (animState == AnimState.WAVE) ? 140 :
+                          (animState == AnimState.SLEEP || (animState == AnimState.IDLE && isRestHours())) ? 280 : 160;
 
             if (frames.length > 0) {
                 currentFrame = currentFrame % frames.length;
@@ -92,14 +96,10 @@ public class FloatingMochiService extends Service {
 
     private final BroadcastReceiver screenReceiver = new BroadcastReceiver() {
         @Override
-        public void onReceive(Context context, Intent intent) {
-            if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
-                isScreenOn = false;
-                animHandler.removeCallbacks(animRunnable);
-            } else if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
-                isScreenOn = true;
-                animHandler.post(animRunnable);
-            }
+        public void onReceive(Context c, Intent i) {
+            isScreenOn = !Intent.ACTION_SCREEN_OFF.equals(i.getAction());
+            if (isScreenOn) animHandler.post(animRunnable);
+            else animHandler.removeCallbacks(animRunnable);
         }
     };
 
@@ -124,7 +124,26 @@ public class FloatingMochiService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         ensureForegroundNotification();
         if (floatingView == null) initOverlay();
+        if (intent != null && ACTION_SHOW_SPEECH.equals(intent.getAction())) {
+            String text = intent.getStringExtra(EXTRA_SPEECH_TEXT);
+            if (text != null) showSpeechBubble(text, 9000);
+        }
         return START_STICKY;
+    }
+
+    public void showSpeechBubble(String text, long durationMs) {
+        if (speechBubble == null && floatingView != null) speechBubble = floatingView.findViewById(R.id.mochi_speech_bubble);
+        if (speechBubble == null) return;
+        animHandler.removeCallbacks(hideSpeechRunnable);
+        speechBubble.setText(text);
+        speechBubble.setVisibility(View.VISIBLE);
+        speechBubble.setAlpha(0f);
+        speechBubble.setScaleX(0.85f);
+        speechBubble.setScaleY(0.85f);
+        speechBubble.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(200).start();
+        setAnimState(AnimState.WAVE);
+        animHandler.postDelayed(() -> setAnimState(AnimState.IDLE), 1500);
+        animHandler.postDelayed(hideSpeechRunnable, durationMs);
     }
 
     private void ensureForegroundNotification() {
@@ -146,37 +165,25 @@ public class FloatingMochiService extends Service {
             stopSelf();
             return;
         }
-
         if (windowManager == null) windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         if (floatingView == null) {
             LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
             floatingView = inflater.inflate(R.layout.floating_mochi_layout, null);
             mochiImage = floatingView.findViewById(R.id.mochi_image);
+            speechBubble = floatingView.findViewById(R.id.mochi_speech_bubble);
+            if (speechBubble != null) speechBubble.setOnClickListener(v -> openHopiApp());
 
             int layoutType = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                    ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                    : WindowManager.LayoutParams.TYPE_PHONE;
-
-            params = new WindowManager.LayoutParams(
-                    WindowManager.LayoutParams.WRAP_CONTENT,
-                    WindowManager.LayoutParams.WRAP_CONTENT,
-                    layoutType,
-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                    PixelFormat.TRANSLUCENT
-            );
-
+                    ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE;
+            params = new WindowManager.LayoutParams(WindowManager.LayoutParams.WRAP_CONTENT,
+                    WindowManager.LayoutParams.WRAP_CONTENT, layoutType, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT);
             params.gravity = Gravity.TOP | Gravity.START;
-            params.x = 40;
-            params.y = 250;
-
+            params.x = 40; params.y = 250;
             setupTouchListener(floatingView);
-
             try {
                 windowManager.addView(floatingView, params);
                 animHandler.post(animRunnable);
-            } catch (Exception e) {
-                stopSelf();
-            }
+            } catch (Exception e) { stopSelf(); }
         }
     }
 
@@ -191,7 +198,6 @@ public class FloatingMochiService extends Service {
 
     private void setupTouchListener(View view) {
         final int touchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
-
         view.setOnTouchListener(new View.OnTouchListener() {
             private int initialX, initialY;
             private float initialTouchX, initialTouchY;
@@ -235,11 +241,9 @@ public class FloatingMochiService extends Service {
                         if (isDragging) {
                             setAnimState(AnimState.IDLE);
                         } else if (duration < 500) {
-                            setAnimState(AnimState.WAVE);
-                            animHandler.postDelayed(() -> {
-                                setAnimState(AnimState.IDLE);
-                                openHopiApp();
-                            }, 650);
+                            showSpeechBubble(ENCOURAGEMENTS[encouragementIndex % ENCOURAGEMENTS.length], 4000);
+                            encouragementIndex++;
+                            animHandler.postDelayed(() -> openHopiApp(), 500);
                         }
                         return true;
                 }
@@ -273,17 +277,11 @@ public class FloatingMochiService extends Service {
     }
 
     private Notification createNotification() {
-        Intent notificationIntent = new Intent(this, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent,
+        PendingIntent pi = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class),
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
-
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Hopi Companion Active")
-                .setContentText("Mochi is with you on your home screen ✨")
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentIntent(pendingIntent)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .build();
+                .setContentTitle("Hopi Companion Active").setContentText("Mochi is with you on your home screen ✨")
+                .setSmallIcon(R.mipmap.ic_launcher).setContentIntent(pi).setPriority(NotificationCompat.PRIORITY_LOW).build();
     }
 
     @Override

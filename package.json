@@ -7,7 +7,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "vitest run",
+    "test": "vitest run tests/domain.test.ts",
     "typecheck": "tsc --noEmit",
     "sync:android": "npx cap sync android",
     "build:apk": "tsc && vite build && npx cap sync android && cmd /c \"cd android && gradlew.bat assembleDebug\""

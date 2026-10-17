@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Plus, Settings as SettingsIcon, ArrowLeft } from 'lucide-react';
 import { MochiAvatar, type MochiState } from '../features/companion/MochiAvatar';
 import { useOverlayCompanion } from '../features/companion/useOverlayCompanion';
@@ -8,35 +8,26 @@ import { TodayRemindersView } from '../features/reminders/components/TodayRemind
 import { UpcomingTasksView } from '../features/reminders/components/UpcomingTasksView';
 import { ReminderEditModal } from '../features/reminders/components/ReminderEditModal';
 import { SettingsView } from '../features/settings/components/SettingsView';
-import { INITIAL_REMINDERS, type Reminder } from '../features/reminders/types';
+import { useReminders } from '../features/reminders/useReminders';
 import { DEFAULT_SETTINGS, type AppSettings } from '../features/settings/types';
+import type { Reminder } from '../features/reminders/types';
 
 export function App() {
   const [tab, setTab] = useState<'today' | 'upcoming' | 'settings'>('today');
   const [mochiState, setMochiState] = useState<MochiState>('idle');
-  const [reminders, setReminders] = useState<Reminder[]>(INITIAL_REMINDERS);
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [modalOpen, setModalOpen] = useState(false);
   const [activeItem, setActiveItem] = useState<Reminder | null>(null);
   const [confettiKey, setConfettiKey] = useState(0);
+
+  const triggerCheer = useCallback(() => {
+    setConfettiKey((k) => k + 1);
+    setMochiState('cheer');
+    setTimeout(() => setMochiState('idle'), 2400);
+  }, []);
+
+  const { reminders, handleToggle, handleSave, handleDelete } = useReminders(triggerCheer);
   const overlay = useOverlayCompanion({ enabled: settings.floatingCompanion });
-
-  const handleToggle = (id: string) => {
-    setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, completed: !r.completed } : r)));
-    const target = reminders.find((r) => r.id === id);
-    if (target && !target.completed) {
-      setConfettiKey((k) => k + 1);
-      setMochiState('cheer');
-      setTimeout(() => setMochiState('idle'), 2400);
-    }
-  };
-
-  const handleSave = (item: Reminder) => {
-    setReminders((prev) => {
-      const idx = prev.findIndex((r) => r.id === item.id);
-      return idx >= 0 ? prev.map((r) => (r.id === item.id ? item : r)) : [item, ...prev];
-    });
-  };
 
   const todayReminders = reminders.filter((r) => r.date <= '2026-10-18');
   const upcomingReminders = reminders.filter((r) => r.date > '2026-10-18');
@@ -45,7 +36,6 @@ export function App() {
     <div className="min-h-screen bg-linen text-warm-900 flex flex-col items-center justify-end relative">
       <ConfettiCelebration triggerKey={confettiKey} />
 
-      {/* Floating Mochi Area */}
       <div className="pt-8 pb-3 flex flex-col items-center text-center select-none z-10">
         <MochiAvatar
           state={mochiState}
@@ -60,7 +50,6 @@ export function App() {
         </p>
       </div>
 
-      {/* 3/4-Height Sheet Shell */}
       <main className="w-full max-w-lg h-[75vh] bg-white rounded-t-[2.2rem] border-t border-x border-[#EAE2D5] shadow-sheet flex flex-col overflow-hidden z-20">
         <header className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-warm-100">
           <div className="w-9">
@@ -93,7 +82,7 @@ export function App() {
         </div>
       </main>
 
-      <ReminderEditModal isOpen={modalOpen} initialReminder={activeItem} onClose={() => setModalOpen(false)} onSave={handleSave} onDelete={(id) => setReminders((p) => p.filter((r) => r.id !== id))} />
+      <ReminderEditModal isOpen={modalOpen} initialReminder={activeItem} onClose={() => setModalOpen(false)} onSave={handleSave} onDelete={handleDelete} />
     </div>
   );
 }
