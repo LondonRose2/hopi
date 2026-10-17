@@ -25,8 +25,18 @@ hopi/
   GEMINI.md             # Quick-reference orientation pointers for Gemini/Antigravity
   .gitignore            # Git exclusion rules (build outputs, env files, node_modules)
   .env.example          # Safe environment template (no real secrets)
+  package.json          # Vite + React + TypeScript + Tailwind + Vitest dependencies
+  vite.config.ts        # Vite configuration with 0.0.0.0 host binding
+  tsconfig.json         # Strict TypeScript compiler options
+  tailwind.config.js    # Mobile-first palette tokens and responsive utilities
+  postcss.config.js     # PostCSS Tailwind and Autoprefixer plugins
+  index.html            # Mobile-first shell, viewport-fit=cover & web app tags
   src/
-    # [Domain directories and entrypoints scaffolded upon project specification]
+    main.tsx            # React root mount (<20 lines)
+    app/
+      App.tsx           # Top-level shell (<100 lines), bottom navigation & view switcher
+    styles/
+      index.css         # Tailwind directives, theme variables & safe-area utilities
 ```
 *Note: As new features and directories are added, agents are required to register them here.*
 
