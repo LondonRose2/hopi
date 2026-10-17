@@ -10,20 +10,23 @@ _Last updated: 2026-10-18 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 ---
 
 ## 📍 Where we are
-- **Phase 1 Feature Complete & APK Generated:**
-  - Production Android APK compiled successfully: [`c:\Users\Rachel\Documents\apps\hopi\release\hopi-debug.apk`](file:///c:/Users/Rachel/Documents/apps/hopi/release/hopi-debug.apk) (5.41 MB).
-  - Includes native Android `FloatingMochiService` with `SYSTEM_ALERT_WINDOW` for home-screen floating companion.
+- **GitHub Repository Created:** [`https://github.com/LondonRose2/hopi`](https://github.com/LondonRose2/hopi) (pushed & tracked on `master`).
+- **Release APK Live on GitHub:**
+  - Official Download Link: [`https://github.com/LondonRose2/hopi/releases/download/v1.0.0/hopi.apk`](https://github.com/LondonRose2/hopi/releases/download/v1.0.0/hopi.apk) (5.41 MB).
+  - Release Page: [`https://github.com/LondonRose2/hopi/releases/tag/v1.0.0`](https://github.com/LondonRose2/hopi/releases/tag/v1.0.0).
+- **Features Included:**
+  - Floating Mochi Companion with native Android `SYSTEM_ALERT_WINDOW` overlay service.
+  - 3/4-height sheet shell, Today Reminders (3-5 items + Load More), front-layer confetti, inline/modal reminder editing, upcoming tasks sectioned by day, sleep mode (12 AM - 9 AM).
 - **Test & Type Health:**
   - 38/38 unit tests passing in Vitest (`tests/domain.test.ts`).
   - Zero TypeScript errors (`npm.cmd run typecheck`).
   - Strict line budgets respected on all files (views <100 lines, components <200 lines).
-- **Git Status:** Committed locally with immutable pre-commit security gate passed. (Not pushed to remote).
 - **Context System:** [`AGENTS.md`](file:///c:/Users/Rachel/Documents/apps/hopi/AGENTS.md) and [`CURRENT_STATUS.md`](file:///c:/Users/Rachel/Documents/apps/hopi/CURRENT_STATUS.md) fully up-to-date.
 
 ---
 
 ## 🔨 What we're working on
-1. Mobile installation and testing of `hopi-debug.apk` on Android device.
+1. Mobile installation and testing of `hopi.apk` on Android phone via direct link.
 2. Collecting real-device feedback on Mochi's sprite animations, home-screen overlay, reminder editing, and confetti celebrations.
 
 ---
