@@ -8,6 +8,11 @@ dist/
 dist-ssr/
 out/
 build/
+android/.gradle/
+android/app/build/
+android/build/
+release/
+*.apk
 
 # Environment files - NEVER commit secrets
 .env

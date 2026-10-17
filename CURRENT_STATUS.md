@@ -10,44 +10,46 @@ _Last updated: 2026-10-18 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 ---
 
 ## 📍 Where we are
-- **Project Repository:** Initialized Git repository at `c:\Users\Rachel\Documents\apps\hopi`.
-- **Framework & Tooling:** React 18 + Vite + TypeScript 5.7 + Tailwind CSS 3.4 + Lucide React + Vitest.
-- **Build & Type Health:** `npm.cmd run typecheck` clean (0 errors), `npm.cmd run build` clean (production bundle generated in `dist/`).
-- **Security Infrastructure:** Day-1 pre-commit security hook installed (`.git/hooks/pre-commit`), audit clean (0 findings), `--ignore-scripts` verified, `.gitignore` and `.env.example` protecting secrets.
-- **Living Context:** `AGENTS.md` (with Table of Contents / Fast File Map), `CURRENT_STATUS.md` (living handoff), and `GEMINI.md` active.
-- **Skills Setup:** Updated global skills (`project-kickoff-architect` and `handoff`) so all future greenfield projects mandate both context files.
+- **Project Repository:** Git initialized at `c:\Users\Rachel\Documents\apps\hopi` (local commits, not pushed to remote).
+- **Framework & Foundation:** React 18 + Vite + TypeScript + Tailwind CSS + Lucide React.
+- **Android APK Pipeline Ready:** Capacitor and Gradle toolchain verified (ready to produce release APK once app is built).
+- **Context System:** [`AGENTS.md`](file:///c:/Users/Rachel/Documents/apps/hopi/AGENTS.md) (with Table of Contents) and [`CURRENT_STATUS.md`](file:///c:/Users/Rachel/Documents/apps/hopi/CURRENT_STATUS.md) active.
 
 ---
 
 ## 🔨 What we're working on
-1. Receiving user specification for Hopi's core domains (what problem it solves, key user journeys, data requirements).
-2. Scaffolding feature modules and domain logic once requirements are specified.
+1. Implementing Phase 1 based on the approved [Hopi Phase 1 Specification](file:///C:/Users/Rachel/.gemini/antigravity/brain/cc76b2cc-449b-4a63-b681-672d35945795/hopi-phase-1-spec.md).
+2. Dispatching design and domain/QA agents.
 
 ---
 
 ## 💡 Why it matters
-- Clear day-1 architecture, live context files, and verified builds prevent token waste, search fatigue, and context amnesia across long development cycles.
+- A gentle, decluttered companion with Mochi provides comforting, non-stressful wellness and spiritual encouragement.
 
 ---
 
 ## ✅ Decisions made (and why)
 | Decision | Why |
 |---|---|
-| **Vite + React + TypeScript + Tailwind CSS** | Proven stack from Travel app: fast compilation, zero server hosting friction, clean token styling. |
-| **Living Context Architecture (`CURRENT_STATUS.md` + `AGENTS.md`)** | Ensures all future AI sessions maintain full context, know file locations via Table of Contents, and respect architectural boundaries. |
-| **Day-1 Security Pre-Commit Hook** | Runs immutable security scanner on every commit to prevent secret leaks, insecure crypto, and RLS lapses. |
-| **Token-Protected File Budgets** | Hard limits on pages (<100 lines), components (<200 lines), and stores (<250 lines) to prevent monolithic file bloat. |
+| **Floating Mochi Companion (`SYSTEM_ALERT_WINDOW`)** | Floats on home screen and over apps so Rachel has her gentle companion always present. |
+| **3/4-Height Modal Sheet** | Opens when tapping Mochi; keeps the phone context visible while managing tasks. |
+| **Decluttered Today View (3–5 items max)** | Eliminates visual anxiety; remaining items accessible via clean "Load More" button. |
+| **Date-Sectioned Upcoming Screen** | Keeps future items separated from today, organized with thin minimalist day dividers (`Thu, Jan 30`). |
+| **Inline & Modal Reminder Editing** | Allows quick 1-tap editing of title, time, and emoji without tedious navigation. |
+| **High-Layer Confetti (`z-index: 99999`)** | Renders celebration burst in front of the modal and avatar for a deeply satisfying feel. |
+| **Sleep Mode (12:00 AM – 9:00 AM)** | Mochi flops down to sleep, silences daytime notifications, protecting rest hours. |
+| **Comforting Oatmeal Linen Palette** | Gentle `#FBF8F2` texture and soft cards avoid sterile white while remaining minimalist. |
 
 ---
 
 ## ⚠️ Known issues / tech debt
-- Ready to receive Hopi feature requirements and domain models.
+- Penguin avatar artwork to be integrated in future update once asset files are provided.
 
 ---
 
 ## ➡️ Next step (proposed — Rachel to confirm)
-1. Provide the domain details / feature vision for Hopi (what features/tools to build).
-2. Create domain directory structures (`src/features/...`, `src/domain/...`, `src/components/ui/...`) and feature cards.
+1. Dispatch `designer-agent` to implement the calming aesthetic tokens, Mochi sprite animator, 3/4-height sheet shell, and front-layer confetti.
+2. Dispatch `domain-qa-agent` to build the pure domain logic (sleep scheduler, date grouping, edit schemas) with full test coverage.
 
 ---
 
