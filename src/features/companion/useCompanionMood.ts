@@ -2,12 +2,14 @@ import { useState, useCallback, useMemo } from 'react';
 import type { MochiState } from './MochiAvatar';
 import { calculateHydrationStatus, isWaterReminder } from '../../domain/reminders/hydration';
 import { floatingOverlayService } from '../../services/nativeOverlay';
+import { companionPhrases } from '../../domain/companion/phrases';
 import type { Reminder } from '../reminders/types';
 
 const WATER_STORAGE_KEY = 'hopi_last_water_time';
 
 export function useCompanionMood(reminders: Reminder[], onCheer?: () => void) {
   const [overrideState, setOverrideState] = useState<MochiState | null>(null);
+  const [customPhrase, setCustomPhrase] = useState<string | null>(null);
   const [isManualAwake, setIsManualAwake] = useState(false);
   const [lastWaterTime, setLastWaterTime] = useState<number>(() => {
     try {
@@ -19,10 +21,7 @@ export function useCompanionMood(reminders: Reminder[], onCheer?: () => void) {
     return cal.getTime() <= Date.now() ? cal.getTime() : cal.getTime() - 86400000;
   });
 
-  const isRestHours = useMemo(() => {
-    const hour = new Date().getHours();
-    return hour >= 0 && hour < 8; // 12 AM to 8 AM
-  }, []);
+  const isRestHours = useMemo(() => new Date().getHours() < 8, []);
 
   const hasOverdueWater = useMemo(() => {
     const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
@@ -38,7 +37,7 @@ export function useCompanionMood(reminders: Reminder[], onCheer?: () => void) {
     });
   }, [reminders]);
 
-  const { hydrationLevel } = useMemo(
+  const { hydrationLevel, hoursSinceDrink } = useMemo(
     () => calculateHydrationStatus(lastWaterTime, Date.now()),
     [lastWaterTime]
   );
@@ -53,6 +52,7 @@ export function useCompanionMood(reminders: Reminder[], onCheer?: () => void) {
   const currentMood = overrideState ?? baseMood;
 
   const statusText = useMemo(() => {
+    if (customPhrase) return customPhrase;
     if (currentMood === 'sleep') {
       return isRestHours && !isManualAwake
         ? 'Mochi is sleeping peacefully 🌙'
@@ -61,24 +61,26 @@ export function useCompanionMood(reminders: Reminder[], onCheer?: () => void) {
     if (currentMood === 'sad') return 'Mochi is thirsty... Remember to hydrate 💧';
     if (currentMood === 'cheer') return 'Mochi is energized and happy! ✨💧';
     if (currentMood === 'wave') return 'Hello friend! 🐰✨';
-    return 'Mochi is here with you';
-  }, [currentMood, isRestHours, isManualAwake]);
+    return companionPhrases.getPhrase(hoursSinceDrink, isRestHours, new Date().getHours());
+  }, [customPhrase, currentMood, isRestHours, isManualAwake, hoursSinceDrink]);
 
   const recordWater = useCallback(() => {
     const now = Date.now();
     setLastWaterTime(now);
     try { localStorage.setItem(WATER_STORAGE_KEY, String(now)); } catch {}
     setOverrideState('cheer');
+    setCustomPhrase('Ah, refreshing! Thank you for hydrating! 💧✨');
     onCheer?.();
     floatingOverlayService.recordWaterIntake();
-    setTimeout(() => setOverrideState(null), 2500);
+    setTimeout(() => { setOverrideState(null); setCustomPhrase(null); }, 3500);
   }, [onCheer]);
 
   const interactMochi = useCallback(() => {
     if (currentMood === 'sleep') {
       setIsManualAwake(true);
       setOverrideState('wave');
-      setTimeout(() => setOverrideState(null), 2000);
+      setCustomPhrase('Mochi woke up to greet you! 🐰✨');
+      setTimeout(() => { setOverrideState(null); setCustomPhrase(null); }, 2500);
       return;
     }
     if (currentMood === 'sad' || hydrationLevel !== 'hydrated') {
@@ -86,8 +88,10 @@ export function useCompanionMood(reminders: Reminder[], onCheer?: () => void) {
       return;
     }
     setOverrideState('wave');
-    setTimeout(() => setOverrideState(null), 2000);
-  }, [currentMood, hydrationLevel, recordWater]);
+    const phrase = companionPhrases.getPhrase(hoursSinceDrink, isRestHours, new Date().getHours());
+    setCustomPhrase(phrase);
+    setTimeout(() => { setOverrideState(null); setCustomPhrase(null); }, 3500);
+  }, [currentMood, hydrationLevel, recordWater, hoursSinceDrink, isRestHours]);
 
   return { currentMood, statusText, hydrationLevel, recordWater, interactMochi };
 }

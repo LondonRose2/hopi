@@ -510,5 +510,40 @@ describe('hydration & companion mood domain logic', () => {
       expect(mood).toBe('idle');
     });
   });
+
+  describe('PhraseSelector domain logic', () => {
+    it('returns peaceful sleeping phrase during rest hours', async () => {
+      const { PhraseSelector } = await import('../src/domain/companion/phrases');
+      const selector = new PhraseSelector();
+      const phrase = selector.getPhrase(0.5, true, 2);
+      expect(phrase).toBe('Zzz... Mochi is resting peacefully 🌙');
+    });
+
+    it('returns water reminders when thirsty (hoursSinceWater >= 2)', async () => {
+      const { PhraseSelector, WATER_REMINDERS } = await import('../src/domain/companion/phrases');
+      const selector = new PhraseSelector();
+      const phrase = selector.getPhrase(2.5, false, 14);
+      expect(WATER_REMINDERS).toContain(phrase);
+    });
+
+    it('returns exhausted sleep phrase when severely dehydrated (hoursSinceWater >= 4)', async () => {
+      const { PhraseSelector } = await import('../src/domain/companion/phrases');
+      const selector = new PhraseSelector();
+      const phrase = selector.getPhrase(4.5, false, 15);
+      expect(phrase).toMatch(/water|dehydrated|energy/i);
+    });
+
+    it('avoids repeating recently selected phrases sequentially', async () => {
+      const { PhraseSelector } = await import('../src/domain/companion/phrases');
+      const selector = new PhraseSelector(3);
+      const candidates = ['Phrase A', 'Phrase B', 'Phrase C', 'Phrase D'];
+      const seen = new Set<string>();
+      for (let i = 0; i < 4; i++) {
+        const p = selector.pick(candidates);
+        seen.add(p);
+      }
+      expect(seen.size).toBeGreaterThanOrEqual(3);
+    });
+  });
 });
 

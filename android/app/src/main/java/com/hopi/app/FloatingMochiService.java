@@ -45,7 +45,7 @@ public class FloatingMochiService extends Service {
 
     private enum AnimState { IDLE, WALK, WAVE, SLEEP, SAD }
     private AnimState animState = AnimState.IDLE;
-    private int currentFrame = 0, encouragementIndex = 0;
+    private int currentFrame = 0;
     private final Handler animHandler = new Handler(Looper.getMainLooper());
     private boolean isScreenOn = true, isManualAwake = false, isDeepSleep = false;
     private long lastManualWakeTime = 0;
@@ -70,9 +70,6 @@ public class FloatingMochiService extends Service {
     };
     private static final int[] SLEEP_LOOP_FRAMES = {
         R.drawable.mochi_sleep_5, R.drawable.mochi_sleep_6
-    };
-    private static final String[] ENCOURAGEMENTS = {
-        "You're doing wonderfully ✨", "Remember to drink water 💧", "Take a gentle breath 🌿", "Mochi is right here 🐰"
     };
 
     private boolean isRestHours() {
@@ -194,12 +191,28 @@ public class FloatingMochiService extends Service {
                         .putLong(PREF_LAST_WATER, System.currentTimeMillis()).apply();
                 isDeepSleep = false;
                 setAnimState(AnimState.WAVE);
-                showSpeechBubble("Ah, refreshing! Thank you for hydrating! 💧✨", 4000);
+                showSpeechBubble(CompanionPhrases.getRandomWaterCelebration(), 4000);
                 animHandler.postDelayed(() -> setAnimState(AnimState.IDLE), 2200);
             }
         }
         return START_STICKY;
     }
+
+    private static final long CHECKIN_INTERVAL_MS = 35 * 60 * 1000L;
+    private final Runnable periodicCheckinRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (isScreenOn && !isRestHours() && animState != AnimState.WALK) {
+                float h = getHoursSinceWater();
+                if (h >= 2.0f) {
+                    showSpeechBubble(CompanionPhrases.getRandomWaterReminder(), 5000);
+                } else if (Math.random() < 0.45) {
+                    showSpeechBubble(CompanionPhrases.getPhraseForContext(h, false, true), 4000);
+                }
+            }
+            animHandler.postDelayed(this, CHECKIN_INTERVAL_MS);
+        }
+    };
 
     public void showSpeechBubble(String text, long durationMs) {
         if (speechBubble == null && floatingView != null) speechBubble = floatingView.findViewById(R.id.mochi_speech_bubble);
@@ -251,6 +264,7 @@ public class FloatingMochiService extends Service {
             try {
                 windowManager.addView(floatingView, params);
                 animHandler.post(animRunnable);
+                animHandler.postDelayed(periodicCheckinRunnable, 15 * 60 * 1000L);
             } catch (Exception e) { stopSelf(); }
         }
     }
@@ -266,16 +280,9 @@ public class FloatingMochiService extends Service {
 
     private void showTapFeedback() {
         float h = getHoursSinceWater();
-        if (isRestHours() && !isManualAwake) {
-            showSpeechBubble("Zzz... Mochi is resting peacefully 🌙", 3500);
-        } else if (h >= 4.0f) {
-            showSpeechBubble("Mochi has no energy... need water 💧😴", 4500);
-        } else if (h >= 2.5f) {
-            showSpeechBubble("Mochi is feeling a bit thirsty... 💧", 4000);
-        } else {
-            showSpeechBubble(ENCOURAGEMENTS[encouragementIndex % ENCOURAGEMENTS.length], 4000);
-            encouragementIndex++;
-        }
+        String phrase = CompanionPhrases.getPhraseForContext(h, isRestHours(), isManualAwake);
+        long duration = (h >= 4.0f || (isRestHours() && !isManualAwake)) ? 4500 : 4000;
+        showSpeechBubble(phrase, duration);
     }
 
     private void setupTouchListener(View view) {

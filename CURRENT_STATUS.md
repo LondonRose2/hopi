@@ -11,24 +11,25 @@ _Last updated: 2026-10-19 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 
 ## 📍 Where we are
 - **GitHub Repository Created:** [`https://github.com/LondonRose2/hopi`](https://github.com/LondonRose2/hopi) (pushed & tracked on `master`).
-- **Release APK Built (v1.0.6):**
+- **GitHub Repository Created:** [`https://github.com/LondonRose2/hopi`](https://github.com/LondonRose2/hopi) (pushed & tracked on `master`).
+- **Release APK Built (v1.0.7):**
   - **Local APK Path:** `release/hopi.apk` (10.32 MB).
-  - **Direct Download / Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.0.6`](https://github.com/LondonRose2/hopi/releases/tag/v1.0.6)
+  - **Direct Download / Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.0.7`](https://github.com/LondonRose2/hopi/releases/tag/v1.0.7)
 - **Features Included:**
-  - **Prevented Premature Alarms & Push Notifications:** Added past-timestamp guards in both TypeScript (`nativeOverlay.ts`) and Android Java (`FloatingMochiPlugin.java`). Alarms with timestamps in the past or within 2 seconds are safely ignored by `AlarmManager.setExactAndAllowWhileIdle()` instead of triggering instantly.
-  - **Dynamic Today Date Handling:** Replaced hardcoded `'2026-10-18'` dates in `ReminderEditModal.tsx` and `App.tsx` with `getTodayDateString()`. When adding new reminders at night or early morning, tasks default to the current calendar date rather than yesterday, ensuring alarms schedule for future times properly.
-  - **Fixed Non-Repeating Sleep Loop:** Mochi transitions once into sleep (frames 0 to 5) and remains peacefully sleeping in a gentle breathing cycle between frames 5 & 6 (850ms interval). Frame 7 (sudden pop-up) is completely excluded from the sleep loop.
-  - **Movement & Morning Wake Behavior:** Mochi stays sleeping all night until moved (dragged across screen) or morning arrives (post-rest hours after 8:00 AM). Moving Mochi wakes it up into walking/idle for a responsive session (15-minute wakefulness window before resting again if undisturbed).
-  - **Dynamic Hydration Calculation Across the Day:** Pure domain calculation (`calculateHydrationStatus`) tracking time elapsed since last water intake:
-    - `< 2.5 hours`: Fully hydrated, joyful and energetic (`idle` / playful `wave`).
-    - `2.5 to 4.0 hours` (or overdue water reminder): Mildly dehydrated (`sad` animation with drooping ears and longing eyes).
-    - `>= 4.0 hours`: Deep dehydration / fatigue (`sleep` animation from lack of energy).
-  - **Instantaneous Drag Direction Response:** Replaced cumulative displacement delta with per-touch event velocity (`instantDeltaX = event.getRawX() - lastTouchX`). When reversing drag direction from left to right or right to left, Mochi flips immediately with zero lag.
-  - **Top Header Status Gradient:** Added a subtle gradient getting darker towards the top (`linear-gradient(to bottom, rgba(45, 39, 33, 0.35) ...)` in `.bg-linen` plus a matching top overlay in `App.tsx`), ensuring the phone header's date, time, battery, and notification indicators are clearly visible and legible.
-  - **Elevated "Add Item" Button:** Moved the Add Item button higher in `ReminderEditModal` with safe-area padding (`pb-6 sm:pb-2` and `py-3`), and elevated the main sheet header (`h-[78vh]`) so the Add Item action is comfortably within thumb reach above the phone's bottom navigation bar.
-  - **Contextual Speech Encouragements:** Tapping Mochi speaks contextually depending on whether it's resting at night, feeling thirsty, or exhausted.
+  - **50+ Diverse Non-Repeating Companion Phrases:** Replaced the repetitive 4-phrase cycle with a rich catalog of over 50 varied phrases in `CompanionPhrases.java` and `phrases.ts`:
+    - **Varied Water Reminders (14 phrases):** Warm, caring prompts to hydrate without feeling like robotic commands.
+    - **Hydration Celebrations (5 phrases):** Joyful praise when water is recorded.
+    - **Gentle Encouragements (12 phrases):** Kind, comforting reminders of progress and patience.
+    - **Mindfulness & Calm Breathing (10 phrases):** Unclenching jaw, grounding, breathing exercises.
+    - **Playful Companion Interactions (8 phrases):** Bunny hops, nose twitches, ear wiggles, and hugs.
+    - **Time-of-Day Contextual Greetings (16 phrases):** Customized for Morning, Afternoon, Evening, and Night.
+  - **Non-Repeating History Buffer (Size 12):** Prevents phrases from repeating sequentially or within recent interactions.
+  - **Regular Gentle Hydration Check-ins:** Added a 35-minute periodic check-in in `FloatingMochiService`. If it has been >= 2 hours since drinking water, Mochi displays a gentle reminder bubble on the home screen overlay without being intrusive.
+  - **Prevented Premature Alarms & Push Notifications:** Added past-timestamp guards in both TypeScript (`nativeOverlay.ts`) and Android Java (`FloatingMochiPlugin.java`).
+  - **Dynamic Today Date Handling:** Replaced hardcoded date strings with `getTodayDateString()`.
+  - **Fixed Non-Repeating Sleep Loop & Drag Direction Flip:** Isolated deep sleep loop to breathing frames 5 & 6, and touch delta to per-event coordinates.
 - **Test & Type Health:**
-  - 54 passing tests in Vitest (`npm.cmd test -- --run`).
+  - 58 passing tests in Vitest (`npm.cmd test -- --run`).
   - Zero TypeScript errors (`npm.cmd run typecheck` / `npm.cmd run build`).
   - Strict line budgets respected on all files (views <100 lines, components <200 lines, services <300 lines).
 - **Context System:** [`AGENTS.md`](file:///c:/Users/Rachel/Documents/apps/hopi/AGENTS.md) and [`CURRENT_STATUS.md`](file:///c:/Users/Rachel/Documents/apps/hopi/CURRENT_STATUS.md) fully up-to-date.

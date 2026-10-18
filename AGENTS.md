@@ -60,11 +60,14 @@ hopi/
         components/
           SettingsView.tsx        # Sleep schedule & companion preferences (<100 lines)
     domain/
-      reminders/        # Pure domain calculations (schemas, grouping, sleep schedule)
+      companion/
+        phrases.ts      # 50+ diverse non-repeating phrases & selector engine (<150 lines)
+      reminders/        # Pure domain calculations (schemas, grouping, sleep schedule, hydration)
     services/
       nativeOverlay.ts  # Bridge to Android native floating overlay & alarms (<100 lines)
   android/
     app/src/main/java/com/hopi/app/
+      CompanionPhrases.java      # Android native phrase catalog & history buffer
       FloatingMochiService.java  # Android WindowManager overlay service (drags on home screen)
       FloatingMochiPlugin.java   # Capacitor bridge for overlay & reminder alarms
       ReminderAlarmReceiver.java # Android Alarm Receiver for push notifications & speech bubbles
