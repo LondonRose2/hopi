@@ -12,6 +12,8 @@ _Last updated: 2026-10-19 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 ## 📍 Where we are
 - **GitHub Repository:** [`https://github.com/LondonRose2/hopi`](https://github.com/LondonRose2/hopi) (pushed & tracked on `master`).
 - **Release APK Built (v1.1.0):**
+  - **Direct Download Link:** [`https://github.com/LondonRose2/hopi/releases/download/v1.1.0/hopi.apk`](https://github.com/LondonRose2/hopi/releases/download/v1.1.0/hopi.apk)
+  - **Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.1.0`](https://github.com/LondonRose2/hopi/releases/tag/v1.1.0)
   - **Local APK Path:** `release/hopi.apk` (11.85 MB).
 - **Features Included:**
   - **Three Companion Avatars (Mochi, Pip, Snowdrop):**
