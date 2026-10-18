@@ -283,6 +283,7 @@ public class FloatingMochiService extends Service {
         view.setOnTouchListener(new View.OnTouchListener() {
             private int initialX, initialY;
             private float initialTouchX, initialTouchY;
+            private float lastTouchX;
             private long touchStartTime;
             private boolean isDragging;
 
@@ -292,6 +293,7 @@ public class FloatingMochiService extends Service {
                     case MotionEvent.ACTION_DOWN:
                         initialX = params.x; initialY = params.y;
                         initialTouchX = event.getRawX(); initialTouchY = event.getRawY();
+                        lastTouchX = event.getRawX();
                         touchStartTime = System.currentTimeMillis();
                         isDragging = false;
                         return true;
@@ -299,6 +301,8 @@ public class FloatingMochiService extends Service {
                     case MotionEvent.ACTION_MOVE:
                         float deltaX = event.getRawX() - initialTouchX;
                         float deltaY = event.getRawY() - initialTouchY;
+                        float instantDeltaX = event.getRawX() - lastTouchX;
+
                         if (!isDragging && (Math.abs(deltaX) > touchSlop || Math.abs(deltaY) > touchSlop)) {
                             isDragging = true;
                             isManualAwake = true;
@@ -308,8 +312,11 @@ public class FloatingMochiService extends Service {
                         }
                         if (isDragging) {
                             if (mochiImage != null) {
-                                if (deltaX > 2) mochiImage.setScaleX(1.0f);
-                                else if (deltaX < -2) mochiImage.setScaleX(-1.0f);
+                                if (instantDeltaX > 1.0f) {
+                                    mochiImage.setScaleX(1.0f);
+                                } else if (instantDeltaX < -1.0f) {
+                                    mochiImage.setScaleX(-1.0f);
+                                }
                             }
                             params.x = initialX + (int) deltaX;
                             params.y = initialY + (int) deltaY;
@@ -317,6 +324,7 @@ public class FloatingMochiService extends Service {
                                 windowManager.updateViewLayout(floatingView, params);
                             }
                         }
+                        lastTouchX = event.getRawX();
                         return true;
 
                     case MotionEvent.ACTION_UP:

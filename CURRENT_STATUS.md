@@ -20,7 +20,7 @@ _Last updated: 2026-10-19 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
     - `< 2.5 hours`: Fully hydrated, joyful and energetic (`idle` / playful `wave`).
     - `2.5 to 4.0 hours` (or overdue water reminder): Mildly dehydrated (`sad` animation with drooping ears and longing eyes).
     - `>= 4.0 hours`: Deep dehydration / fatigue (`sleep` animation from lack of energy).
-  - **Interactive Hydration Action:** 1-tap `💧 Drink` action in the header and tap-to-drink on Mochi or checking off water reminders immediately rehydrates Mochi, triggers celebratory confetti and cheer animation, and updates native overlay state with speech bubble: *"Ah, refreshing! Thank you for hydrating! 💧✨"*.
+  - **Instantaneous Drag Direction Response:** Replaced cumulative displacement delta with per-touch event velocity (`instantDeltaX = event.getRawX() - lastTouchX`). When reversing drag direction from left to right or right to left, Mochi flips immediately with zero lag.
   - **Contextual Speech Encouragements:** Tapping Mochi speaks contextually depending on whether it's resting at night, feeling thirsty, or exhausted.
 - **Test & Type Health:**
   - 54 passing tests in Vitest (`npm.cmd test -- --run`).
