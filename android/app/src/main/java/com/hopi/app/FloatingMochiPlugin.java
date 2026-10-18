@@ -257,4 +257,29 @@ public class FloatingMochiPlugin extends Plugin {
         ret.put("saved", true);
         call.resolve(ret);
     }
+
+    @PluginMethod
+    public void setCompanionAvatar(PluginCall call) {
+        String avatar = call.getString("avatar", "mochi");
+        String name = call.getString("name", "Mochi");
+        Context context = getContext();
+        SharedPreferences prefs = context.getSharedPreferences("hopi_companion_prefs", Context.MODE_PRIVATE);
+        prefs.edit().putString("companion_avatar", avatar).putString("companion_name", name).apply();
+
+        try {
+            Intent intent = new Intent(context, FloatingMochiService.class);
+            intent.setAction(FloatingMochiService.ACTION_UPDATE_AVATAR);
+            intent.putExtra("avatar", avatar);
+            intent.putExtra("name", name);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent);
+            } else {
+                context.startService(intent);
+            }
+        } catch (Exception ignored) {}
+
+        JSObject ret = new JSObject();
+        ret.put("saved", true);
+        call.resolve(ret);
+    }
 }

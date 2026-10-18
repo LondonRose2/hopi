@@ -10,7 +10,7 @@ import { UpcomingTasksView } from '../features/reminders/components/UpcomingTask
 import { ReminderEditModal } from '../features/reminders/components/ReminderEditModal';
 import { SettingsView } from '../features/settings/components/SettingsView';
 import { useReminders } from '../features/reminders/useReminders';
-import { DEFAULT_SETTINGS, type AppSettings } from '../features/settings/types';
+import { DEFAULT_SETTINGS, type AppSettings, getCompanionName } from '../features/settings/types';
 import { type Reminder, getTodayDateString } from '../features/reminders/types';
 
 export function App() {
@@ -20,10 +20,11 @@ export function App() {
   const [activeItem, setActiveItem] = useState<Reminder | null>(null);
   const [confettiKey, setConfettiKey] = useState(0);
 
+  const companionName = getCompanionName(settings.avatarChoice);
   const triggerCheer = useCallback(() => setConfettiKey((k) => k + 1), []);
   const { reminders, handleToggle, handleSave, handleDelete } = useReminders(triggerCheer);
   const overlay = useOverlayCompanion({ enabled: settings.floatingCompanion });
-  const companion = useCompanionMood(reminders, triggerCheer);
+  const companion = useCompanionMood(reminders, triggerCheer, companionName);
 
   const todayStr = getTodayDateString();
   const todayReminders = reminders.filter((r) => r.date <= todayStr);
@@ -34,7 +35,13 @@ export function App() {
       <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#2D2721]/30 via-[#2D2721]/10 to-transparent pointer-events-none z-0" />
       <ConfettiCelebration triggerKey={confettiKey} />
       <div className="pt-safe pt-8 pb-3 flex flex-col items-center text-center select-none z-10">
-        <MochiAvatar state={companion.currentMood} size={110} onClick={companion.interactMochi} />
+        <MochiAvatar
+          avatar={settings.avatarChoice}
+          state={companion.currentMood}
+          size={110}
+          onClick={companion.interactMochi}
+          title={companionName}
+        />
         <p className="text-xs font-semibold text-warm-600 mt-1 tracking-wide flex items-center gap-1.5">
           {tab === 'settings' ? 'Companion Settings' : companion.statusText}
           {tab !== 'settings' && companion.hydrationLevel !== 'hydrated' && (

@@ -21,6 +21,9 @@ export const recurringTypeSchema = z.enum([
 export const avatarTypeSchema = z.enum([
   'rabbit',
   'penguin',
+  'mochi',
+  'pip',
+  'snowdrop',
 ]);
 
 export const reminderSchema = z.object({

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
+import { getAvatarConfig, type MochiState } from './avatarFrames';
 
-export type MochiState = 'idle' | 'wave' | 'sleep' | 'cheer' | 'sad';
+export type { MochiState };
 
 interface MochiAvatarProps {
   state?: MochiState;
@@ -11,52 +12,8 @@ interface MochiAvatarProps {
   onDoubleTap?: () => void;
   speedMs?: number;
   title?: string;
+  avatar?: string;
 }
-
-interface Frame {
-  sx: number;
-  sy: number;
-  sw: number;
-  sh: number;
-}
-
-const SLEEP_LOOP_FRAMES: Frame[] = [
-  { sx: 432, sy: 470, sw: 81, sh: 84 }, // lying flat asleep (still)
-  { sx: 519, sy: 470, sw: 78, sh: 84 }, // breathing softly asleep
-];
-
-const FRAMES: Record<MochiState, Frame[]> = {
-  idle: [
-    { sx: 2, sy: 7, sw: 81, sh: 79 },
-    { sx: 89, sy: 7, sw: 80, sh: 79 },
-    { sx: 174, sy: 7, sw: 81, sh: 79 },
-    { sx: 261, sy: 7, sw: 79, sh: 79 },
-    { sx: 346, sy: 7, sw: 81, sh: 79 },
-    { sx: 432, sy: 7, sw: 81, sh: 79 },
-    { sx: 518, sy: 7, sw: 81, sh: 79 },
-  ],
-  wave: [
-    { sx: 4, sy: 287, sw: 78, sh: 77 },
-    { sx: 88, sy: 287, sw: 82, sh: 77 },
-    { sx: 175, sy: 287, sw: 80, sh: 77 },
-    { sx: 260, sy: 287, sw: 81, sh: 77 },
-  ],
-  sleep: SLEEP_LOOP_FRAMES,
-  sad: [
-    { sx: 9, sy: 470, sw: 67, sh: 84 },
-    { sx: 94, sy: 470, sw: 69, sh: 84 },
-    { sx: 180, sy: 470, sw: 70, sh: 84 },
-    { sx: 94, sy: 470, sw: 69, sh: 84 },
-  ],
-  cheer: [
-    { sx: 2, sy: 563, sw: 81, sh: 85 },
-    { sx: 88, sy: 563, sw: 81, sh: 85 },
-    { sx: 174, sy: 563, sw: 81, sh: 85 },
-    { sx: 260, sy: 563, sw: 81, sh: 85 },
-    { sx: 347, sy: 563, sw: 79, sh: 85 },
-    { sx: 432, sy: 563, sw: 81, sh: 85 },
-  ],
-};
 
 const DEFAULT_SPEEDS: Record<MochiState, number> = {
   idle: 170,
@@ -75,6 +32,7 @@ export function MochiAvatar({
   onDoubleTap,
   speedMs,
   title = 'Companion',
+  avatar = 'mochi',
 }: MochiAvatarProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [frameIndex, setFrameIndex] = useState(0);
@@ -84,17 +42,20 @@ export function MochiAvatar({
   const lastTapRef = useRef<number>(0);
   const isPressing = useRef(false);
 
-  // Load sprite sheet
+  const { spriteSrc, frames } = useMemo(() => getAvatarConfig(avatar), [avatar]);
+
+  // Load sprite sheet whenever avatar changes
   useEffect(() => {
+    setLoaded(false);
     const img = new Image();
-    img.src = '/mochi-sprites.png';
+    img.src = spriteSrc;
     img.onload = () => {
       imgRef.current = img;
       setLoaded(true);
     };
-  }, []);
+  }, [spriteSrc]);
 
-  const activeFrames = useMemo(() => FRAMES[state] || FRAMES.idle, [state]);
+  const activeFrames = useMemo(() => frames[state] || frames.idle, [frames, state]);
   const frameInterval = speedMs ?? DEFAULT_SPEEDS[state] ?? 160;
 
   // Frame sequencer: organic sleep with occasional breathing
@@ -147,17 +108,7 @@ export function MochiAvatar({
     const dx = (size - dw) / 2;
     const dy = (size - dh) / 2;
 
-    ctx.drawImage(
-      img,
-      currentFrame.sx,
-      currentFrame.sy,
-      currentFrame.sw,
-      currentFrame.sh,
-      dx,
-      dy,
-      dw,
-      dh
-    );
+    ctx.drawImage(img, currentFrame.sx, currentFrame.sy, currentFrame.sw, currentFrame.sh, dx, dy, dw, dh);
   }, [frameIndex, activeFrames, loaded, size]);
 
   const handlePointerDown = () => {

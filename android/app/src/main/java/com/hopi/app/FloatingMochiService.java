@@ -45,10 +45,12 @@ import org.json.JSONObject;
 public class FloatingMochiService extends Service {
     public static final String ACTION_SHOW_SPEECH = "com.hopi.app.ACTION_SHOW_SPEECH";
     public static final String ACTION_RECORD_WATER = "com.hopi.app.ACTION_RECORD_WATER";
+    public static final String ACTION_UPDATE_AVATAR = "com.hopi.app.ACTION_UPDATE_AVATAR";
     public static final String EXTRA_SPEECH_TEXT = "extra_speech_text";
     private static final String PREFS_NAME = "hopi_companion_prefs";
     private static final String PREF_LAST_WATER = "last_water_time";
     private static final String PREF_COMPANION_NAME = "companion_name";
+    private static final String PREF_COMPANION_AVATAR = "companion_avatar";
     private static final String CHANNEL_ID = "hopi_companion_channel";
     private static final int NOTIFICATION_ID = 1001;
 
@@ -73,24 +75,122 @@ public class FloatingMochiService extends Service {
     private VoiceParser.ParsedVoiceReminder pendingClarification = null;
     private long lastTapUpTime = 0;
 
-    private static final int[] IDLE_FRAMES = {
+    // --- Mochi Frames ---
+    private static final int[] MOCHI_IDLE = {
         R.drawable.mochi_idle_0, R.drawable.mochi_idle_1, R.drawable.mochi_idle_2,
         R.drawable.mochi_idle_3, R.drawable.mochi_idle_4, R.drawable.mochi_idle_5, R.drawable.mochi_idle_6
     };
-    private static final int[] WALK_FRAMES = {
+    private static final int[] MOCHI_WALK = {
         R.drawable.mochi_walk_0, R.drawable.mochi_walk_1, R.drawable.mochi_walk_2, R.drawable.mochi_walk_3,
         R.drawable.mochi_walk_4, R.drawable.mochi_walk_5, R.drawable.mochi_walk_6, R.drawable.mochi_walk_7
     };
-    private static final int[] WAVE_FRAMES = {
+    private static final int[] MOCHI_WAVE = {
         R.drawable.mochi_wave_0, R.drawable.mochi_wave_1, R.drawable.mochi_wave_2, R.drawable.mochi_wave_3
     };
-    private static final int[] SAD_FRAMES = {
+    private static final int[] MOCHI_SAD = {
         R.drawable.mochi_sleep_0, R.drawable.mochi_sleep_1, R.drawable.mochi_sleep_2, R.drawable.mochi_sleep_1
     };
-    private static final int[] SLEEP_INTRO_FRAMES = {
+    private static final int[] MOCHI_SLEEP_INTRO = {
         R.drawable.mochi_sleep_0, R.drawable.mochi_sleep_1, R.drawable.mochi_sleep_2,
         R.drawable.mochi_sleep_3, R.drawable.mochi_sleep_4
     };
+
+    // --- Pip Frames ---
+    private static final int[] PIP_IDLE = {
+        R.drawable.pip_idle_0, R.drawable.pip_idle_1, R.drawable.pip_idle_2,
+        R.drawable.pip_idle_3, R.drawable.pip_idle_4, R.drawable.pip_idle_5
+    };
+    private static final int[] PIP_WALK = {
+        R.drawable.pip_walk_0, R.drawable.pip_walk_1, R.drawable.pip_walk_2, R.drawable.pip_walk_3,
+        R.drawable.pip_walk_4, R.drawable.pip_walk_5, R.drawable.pip_walk_6, R.drawable.pip_walk_7
+    };
+    private static final int[] PIP_WAVE = {
+        R.drawable.pip_wave_0, R.drawable.pip_wave_1, R.drawable.pip_wave_2, R.drawable.pip_wave_3
+    };
+    private static final int[] PIP_SAD = {
+        R.drawable.pip_sad_0, R.drawable.pip_sad_1, R.drawable.pip_sad_2, R.drawable.pip_sad_1
+    };
+    private static final int[] PIP_SLEEP_INTRO = {
+        R.drawable.pip_sleep_0, R.drawable.pip_sleep_1, R.drawable.pip_sleep_2,
+        R.drawable.pip_sleep_3, R.drawable.pip_sleep_4
+    };
+
+    // --- Snowdrop Frames ---
+    private static final int[] SNOWDROP_IDLE = {
+        R.drawable.snowdrop_idle_0, R.drawable.snowdrop_idle_1, R.drawable.snowdrop_idle_2,
+        R.drawable.snowdrop_idle_3, R.drawable.snowdrop_idle_4, R.drawable.snowdrop_idle_5
+    };
+    private static final int[] SNOWDROP_WALK = {
+        R.drawable.snowdrop_walk_0, R.drawable.snowdrop_walk_1, R.drawable.snowdrop_walk_2, R.drawable.snowdrop_walk_3,
+        R.drawable.snowdrop_walk_4, R.drawable.snowdrop_walk_5, R.drawable.snowdrop_walk_6, R.drawable.snowdrop_walk_7
+    };
+    private static final int[] SNOWDROP_WAVE = {
+        R.drawable.snowdrop_wave_0, R.drawable.snowdrop_wave_1, R.drawable.snowdrop_wave_2, R.drawable.snowdrop_wave_3
+    };
+    private static final int[] SNOWDROP_SAD = {
+        R.drawable.snowdrop_sad_0, R.drawable.snowdrop_sad_1, R.drawable.snowdrop_sad_2, R.drawable.snowdrop_sad_1
+    };
+    private static final int[] SNOWDROP_SLEEP_INTRO = {
+        R.drawable.snowdrop_sleep_0, R.drawable.snowdrop_sleep_1, R.drawable.snowdrop_sleep_2,
+        R.drawable.snowdrop_sleep_3, R.drawable.snowdrop_sleep_4
+    };
+
+    private String getCompanionAvatar() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String avatar = prefs.getString(PREF_COMPANION_AVATAR, "mochi");
+        if ("penguin".equals(avatar) || "pip".equals(avatar)) return "pip";
+        if ("snowdrop".equals(avatar)) return "snowdrop";
+        return "mochi";
+    }
+
+    private int[] getIdleFrames() {
+        String a = getCompanionAvatar();
+        if ("pip".equals(a)) return PIP_IDLE;
+        if ("snowdrop".equals(a)) return SNOWDROP_IDLE;
+        return MOCHI_IDLE;
+    }
+
+    private int[] getWalkFrames() {
+        String a = getCompanionAvatar();
+        if ("pip".equals(a)) return PIP_WALK;
+        if ("snowdrop".equals(a)) return SNOWDROP_WALK;
+        return MOCHI_WALK;
+    }
+
+    private int[] getWaveFrames() {
+        String a = getCompanionAvatar();
+        if ("pip".equals(a)) return PIP_WAVE;
+        if ("snowdrop".equals(a)) return SNOWDROP_WAVE;
+        return MOCHI_WAVE;
+    }
+
+    private int[] getSadFrames() {
+        String a = getCompanionAvatar();
+        if ("pip".equals(a)) return PIP_SAD;
+        if ("snowdrop".equals(a)) return SNOWDROP_SAD;
+        return MOCHI_SAD;
+    }
+
+    private int[] getSleepIntroFrames() {
+        String a = getCompanionAvatar();
+        if ("pip".equals(a)) return PIP_SLEEP_INTRO;
+        if ("snowdrop".equals(a)) return SNOWDROP_SLEEP_INTRO;
+        return MOCHI_SLEEP_INTRO;
+    }
+
+    private int getSleepStillFrame() {
+        String a = getCompanionAvatar();
+        if ("pip".equals(a)) return R.drawable.pip_sleep_5;
+        if ("snowdrop".equals(a)) return R.drawable.snowdrop_sleep_5;
+        return R.drawable.mochi_sleep_5;
+    }
+
+    private int getSleepBreathFrame() {
+        String a = getCompanionAvatar();
+        if ("pip".equals(a)) return R.drawable.pip_sleep_6;
+        if ("snowdrop".equals(a)) return R.drawable.snowdrop_sleep_6;
+        return R.drawable.mochi_sleep_6;
+    }
 
     private String getCompanionName() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
@@ -151,27 +251,27 @@ public class FloatingMochiService extends Service {
                 isDeepSleep = false;
             }
 
-            int[] frames = IDLE_FRAMES;
+            int[] frames = getIdleFrames();
             int delayMs = 160;
 
             if (animState == AnimState.WALK) {
-                frames = WALK_FRAMES; delayMs = 95; isDeepSleep = false;
+                frames = getWalkFrames(); delayMs = 95; isDeepSleep = false;
             } else if (animState == AnimState.WAVE) {
-                frames = WAVE_FRAMES; delayMs = 140; isDeepSleep = false;
+                frames = getWaveFrames(); delayMs = 140; isDeepSleep = false;
             } else if (animState == AnimState.SAD) {
-                frames = SAD_FRAMES; delayMs = 340; isDeepSleep = false;
+                frames = getSadFrames(); delayMs = 340; isDeepSleep = false;
             } else if (animState == AnimState.SLEEP) {
                 if (!isDeepSleep) {
-                    frames = SLEEP_INTRO_FRAMES; delayMs = 250;
+                    frames = getSleepIntroFrames(); delayMs = 250;
                     if (currentFrame >= frames.length - 1) { isDeepSleep = true; currentFrame = 0; }
                 } else {
                     // Organic sleep: stays mostly peaceful on still frame, occasional breath at varied intervals
                     if (currentFrame == 0) {
-                        mochiImage.setImageResource(R.drawable.mochi_sleep_5);
+                        mochiImage.setImageResource(getSleepStillFrame());
                         delayMs = 2800 + (int)(Math.random() * 2400); // 2.8s to 5.2s still
                         currentFrame = 1;
                     } else {
-                        mochiImage.setImageResource(R.drawable.mochi_sleep_6);
+                        mochiImage.setImageResource(getSleepBreathFrame());
                         delayMs = 650 + (int)(Math.random() * 300); // ~0.7s gentle breath
                         currentFrame = 0;
                     }
@@ -266,6 +366,19 @@ public class FloatingMochiService extends Service {
                 setAnimState(AnimState.WAVE);
                 showSpeechBubble(CompanionPhrases.getRandomWaterCelebration(getCompanionName()), 4000);
                 animHandler.postDelayed(() -> setAnimState(AnimState.IDLE), 2200);
+            } else if (ACTION_UPDATE_AVATAR.equals(intent.getAction())) {
+                String avatar = intent.getStringExtra("avatar");
+                String name = intent.getStringExtra("name");
+                if (avatar != null || name != null) {
+                    SharedPreferences.Editor ed = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit();
+                    if (avatar != null) ed.putString(PREF_COMPANION_AVATAR, avatar);
+                    if (name != null) ed.putString(PREF_COMPANION_NAME, name);
+                    ed.apply();
+                }
+                currentFrame = 0;
+                isDeepSleep = false;
+                animHandler.removeCallbacks(animRunnable);
+                animHandler.post(animRunnable);
             }
         }
         return START_STICKY;

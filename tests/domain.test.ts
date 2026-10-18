@@ -307,6 +307,19 @@ describe('schemas and validation domain logic', () => {
     expect(settingsSchema.safeParse(settings).success).toBe(true);
   });
 
+  it('validates mochi, pip, and snowdrop avatars', () => {
+    const base = {
+      sleepStart: '00:00',
+      sleepEnd: '09:00',
+      encouragementsEnabled: true,
+      overlayEnabled: false,
+      notificationsEnabled: true,
+    };
+    expect(settingsSchema.safeParse({ ...base, avatar: 'mochi' }).success).toBe(true);
+    expect(settingsSchema.safeParse({ ...base, avatar: 'pip' }).success).toBe(true);
+    expect(settingsSchema.safeParse({ ...base, avatar: 'snowdrop' }).success).toBe(true);
+  });
+
   it('rejects invalid settings', () => {
     const invalidSettings = {
       avatar: 'dog', // invalid avatar

@@ -1,5 +1,5 @@
-import { Moon, Sparkles, Bell, Layers, Check } from 'lucide-react';
-import type { AppSettings } from '../types';
+import { Moon, Sparkles, Bell, Layers } from 'lucide-react';
+import { type AppSettings, normalizeAvatar, getCompanionName } from '../types';
 import { floatingOverlayService } from '../../../services/nativeOverlay';
 
 interface SettingsViewProps {
@@ -7,7 +7,15 @@ interface SettingsViewProps {
   onUpdate: (newSettings: Partial<AppSettings>) => void;
 }
 
+const AVATAR_OPTIONS = [
+  { id: 'mochi', label: '🐰 Mochi', sub: 'Bunny' },
+  { id: 'pip', label: '🐧 Pip', sub: 'Penguin' },
+  { id: 'snowdrop', label: '🐇 Snowdrop', sub: 'Bunny' },
+] as const;
+
 export function SettingsView({ settings, onUpdate }: SettingsViewProps) {
+  const companionName = getCompanionName(settings.avatarChoice);
+
   const toggleRow = (label: string, desc: string, icon: React.ReactNode, value: boolean, key: keyof AppSettings) => (
     <div className="flex items-center justify-between p-3.5 bg-white rounded-pebble border border-[#EAE2D5] shadow-pebble">
       <div className="flex items-center gap-3">
@@ -43,22 +51,28 @@ export function SettingsView({ settings, onUpdate }: SettingsViewProps) {
       {/* Avatar Choice */}
       <div className="p-4 bg-white rounded-pebble border border-[#EAE2D5] shadow-pebble space-y-2.5">
         <label className="text-xs font-semibold text-warm-900 block">Companion Character</label>
-        <div className="grid grid-cols-2 gap-2">
-          {(['rabbit', 'penguin'] as const).map((avatar) => (
-            <button
-              key={avatar}
-              type="button"
-              onClick={() => onUpdate({ avatarChoice: avatar })}
-              className={`p-3 rounded-xl border flex items-center justify-between capitalize text-xs font-medium transition-all ${
-                settings.avatarChoice === avatar
-                  ? 'border-terracotta bg-terracotta-soft text-warm-900 font-semibold'
-                  : 'border-warm-200 bg-warm-50/50 text-warm-600 hover:bg-warm-100'
-              }`}
-            >
-              <span>{avatar === 'rabbit' ? '🐰 Mochi (Rabbit)' : '🐧 Pip (Penguin)'}</span>
-              {settings.avatarChoice === avatar && <Check className="w-4 h-4 text-terracotta stroke-[2.5]" />}
-            </button>
-          ))}
+        <div className="grid grid-cols-3 gap-2">
+          {AVATAR_OPTIONS.map((avatar) => {
+            const isSelected = normalizeAvatar(settings.avatarChoice) === avatar.id;
+            return (
+              <button
+                key={avatar.id}
+                type="button"
+                onClick={async () => {
+                  onUpdate({ avatarChoice: avatar.id });
+                  await floatingOverlayService.setCompanionAvatar(avatar.id, getCompanionName(avatar.id));
+                }}
+                className={`py-2.5 px-1.5 rounded-xl border flex flex-col items-center justify-center text-center transition-all ${
+                  isSelected
+                    ? 'border-terracotta bg-terracotta-soft text-warm-900 font-semibold shadow-sm'
+                    : 'border-warm-200 bg-warm-50/50 text-warm-600 hover:bg-warm-100'
+                }`}
+              >
+                <span className="text-xs font-semibold">{avatar.label}</span>
+                <span className="text-[10px] text-warm-500 font-normal">{avatar.sub}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -68,7 +82,7 @@ export function SettingsView({ settings, onUpdate }: SettingsViewProps) {
           <Moon className="w-4 h-4 text-warm-500" />
           <h3 className="text-xs font-semibold text-warm-900">Sleep Schedule</h3>
         </div>
-        <p className="text-[11px] text-warm-500">During rest hours, Mochi sleeps peacefully and alerts remain silent.</p>
+        <p className="text-[11px] text-warm-500">During rest hours, {companionName} sleeps peacefully and alerts remain silent.</p>
         <div className="grid grid-cols-2 gap-2.5 pt-1">
           <div>
             <span className="text-[10px] uppercase font-bold text-warm-400 block mb-1">Rest From</span>
@@ -85,7 +99,7 @@ export function SettingsView({ settings, onUpdate }: SettingsViewProps) {
       <div className="space-y-2">
         {toggleRow('Encouragements', 'Heartwarming micro-affirmations', <Sparkles className="w-4 h-4" />, settings.encouragements, 'encouragements')}
         {toggleRow('Gentle Notifications', 'Timely reminder alerts', <Bell className="w-4 h-4" />, settings.notifications, 'notifications')}
-        {toggleRow('Floating Companion', 'Keep Mochi visible over other apps', <Layers className="w-4 h-4" />, settings.floatingCompanion, 'floatingCompanion')}
+        {toggleRow('Floating Companion', `Keep ${companionName} visible over other apps`, <Layers className="w-4 h-4" />, settings.floatingCompanion, 'floatingCompanion')}
       </div>
     </div>
   );

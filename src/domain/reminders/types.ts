@@ -2,7 +2,7 @@ export type ReminderCategory = 'water' | 'walk' | 'rest' | 'scripture' | 'custom
 
 export type RecurringType = 'daily' | 'weekdays' | 'once';
 
-export type AvatarType = 'rabbit' | 'penguin';
+export type AvatarType = 'rabbit' | 'penguin' | 'mochi' | 'pip' | 'snowdrop';
 
 export interface Reminder {
   id: string;

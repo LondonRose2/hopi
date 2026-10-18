@@ -160,4 +160,11 @@ export const floatingOverlayService = {
       await (NativeFloatingMochi as any).setCompanionName({ name });
     } catch {}
   },
+
+  async setCompanionAvatar(avatar: string, name: string): Promise<void> {
+    if (!Capacitor.isNativePlatform()) return;
+    try {
+      await (NativeFloatingMochi as any).setCompanionAvatar({ avatar, name });
+    } catch {}
+  },
 };
