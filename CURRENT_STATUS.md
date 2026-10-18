@@ -11,12 +11,19 @@ _Last updated: 2026-10-19 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 
 ## 📍 Where we are
 - **GitHub Repository:** [`https://github.com/LondonRose2/hopi`](https://github.com/LondonRose2/hopi) (pushed & tracked on `master`).
-- **Release APK Built (v1.1.0):**
-  - **Direct Download Link:** [`https://github.com/LondonRose2/hopi/releases/download/v1.1.0/hopi.apk`](https://github.com/LondonRose2/hopi/releases/download/v1.1.0/hopi.apk)
-  - **Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.1.0`](https://github.com/LondonRose2/hopi/releases/tag/v1.1.0)
-  - **Local APK Path:** `release/hopi.apk` (11.85 MB).
+- **Release APK Built (v1.1.1):**
+  - **Direct Download Link:** [`https://github.com/LondonRose2/hopi/releases/download/v1.1.1/hopi.apk`](https://github.com/LondonRose2/hopi/releases/download/v1.1.1/hopi.apk)
+  - **Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.1.1`](https://github.com/LondonRose2/hopi/releases/tag/v1.1.1)
+  - **Local APK Path:** `release/hopi.apk` (11.89 MB).
 - **Features Included:**
-  - **Three Companion Avatars (Mochi, Pip, Snowdrop):**
+  - **Organic, Non-Repetitive Idle & Blinking Engine:**
+    - Replaced rapid 900ms linear frame cycling with natural resting posture (2.4s–5.2s peaceful still rest).
+    - Varied realistic actions: single blinks (70ms/130ms), occasional double-blinks (20%), curious head tilts (10%), and sweet nose/paw grooming (10%).
+  - **Authentic Flat Sleeping & Breathing Slumber:**
+    - Replaced sitting head-bobbing in Snowdrop and Pip with true flat slumber frames (lying flat, chin on paws, eyes closed peacefully for 3.0s–5.4s, followed by gentle ~750ms breathing shift).
+  - **Grounded Hop & Walk Pacing:**
+    - Calibrated dragging motion to 140ms per frame for a graceful, bouncy hop rather than frantic cycling.
+  - **Three Selectable Companions:** Mochi (plush bunny), Pip (baby penguin), and Snowdrop (lop rabbit).
     - 🐰 **Mochi**: The classic plush cream bunny with gentle stitching and floppy ears.
     - 🐧 **Pip**: The realistic fluffy baby penguin with soft downy feathers.
     - 🐇 **Snowdrop**: The realistic fluffy white bunny with gentle lop ears.

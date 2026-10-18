@@ -63,6 +63,7 @@ public class FloatingMochiService extends Service {
     private enum AnimState { IDLE, WALK, WAVE, SLEEP, SAD }
     private AnimState animState = AnimState.IDLE;
     private int currentFrame = 0;
+    private int currentIdleAction = 0, idleActionStep = 0;
     private final Handler animHandler = new Handler(Looper.getMainLooper());
     private boolean isScreenOn = true, isManualAwake = false, isDeepSleep = false;
     private long lastManualWakeTime = 0;
@@ -192,6 +193,20 @@ public class FloatingMochiService extends Service {
         return R.drawable.mochi_sleep_6;
     }
 
+    private int getCuriousFrame() {
+        String a = getCompanionAvatar();
+        if ("pip".equals(a)) return R.drawable.pip_curious;
+        if ("snowdrop".equals(a)) return R.drawable.snowdrop_curious;
+        return R.drawable.mochi_curious;
+    }
+
+    private int getGroomFrame() {
+        String a = getCompanionAvatar();
+        if ("pip".equals(a)) return R.drawable.pip_groom;
+        if ("snowdrop".equals(a)) return R.drawable.snowdrop_groom;
+        return R.drawable.mochi_groom;
+    }
+
     private String getCompanionName() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         return prefs.getString(PREF_COMPANION_NAME, "Mochi");
@@ -248,36 +263,125 @@ public class FloatingMochiService extends Service {
             if (target != AnimState.WALK && target != AnimState.WAVE && animState != target) {
                 animState = target;
                 currentFrame = 0;
+                currentIdleAction = 0;
+                idleActionStep = 0;
                 isDeepSleep = false;
             }
 
-            int[] frames = getIdleFrames();
-            int delayMs = 160;
-
-            if (animState == AnimState.WALK) {
-                frames = getWalkFrames(); delayMs = 95; isDeepSleep = false;
-            } else if (animState == AnimState.WAVE) {
-                frames = getWaveFrames(); delayMs = 140; isDeepSleep = false;
-            } else if (animState == AnimState.SAD) {
-                frames = getSadFrames(); delayMs = 340; isDeepSleep = false;
-            } else if (animState == AnimState.SLEEP) {
-                if (!isDeepSleep) {
-                    frames = getSleepIntroFrames(); delayMs = 250;
-                    if (currentFrame >= frames.length - 1) { isDeepSleep = true; currentFrame = 0; }
-                } else {
-                    // Organic sleep: stays mostly peaceful on still frame, occasional breath at varied intervals
-                    if (currentFrame == 0) {
-                        mochiImage.setImageResource(getSleepStillFrame());
-                        delayMs = 2800 + (int)(Math.random() * 2400); // 2.8s to 5.2s still
-                        currentFrame = 1;
+            if (animState == AnimState.IDLE) {
+                isDeepSleep = false;
+                int[] idleFrames = getIdleFrames();
+                if (currentIdleAction == 0) {
+                    mochiImage.setImageResource(idleFrames[0]);
+                    double roll = Math.random();
+                    if (roll < 0.60) currentIdleAction = 1; // single blink
+                    else if (roll < 0.80) currentIdleAction = 2; // double blink
+                    else if (roll < 0.90) currentIdleAction = 3; // curious tilt
+                    else currentIdleAction = 4; // groom / sniff
+                    idleActionStep = 0;
+                    animHandler.postDelayed(this, 2400 + (int)(Math.random() * 2600));
+                    return;
+                } else if (currentIdleAction == 1) {
+                    // Single natural blink
+                    if (idleActionStep == 0) {
+                        mochiImage.setImageResource(idleFrames.length > 1 ? idleFrames[1] : idleFrames[0]);
+                        idleActionStep = 1;
+                        animHandler.postDelayed(this, 70);
+                    } else if (idleActionStep == 1) {
+                        mochiImage.setImageResource(idleFrames.length > 2 ? idleFrames[2] : idleFrames[0]);
+                        idleActionStep = 2;
+                        animHandler.postDelayed(this, 130);
                     } else {
-                        mochiImage.setImageResource(getSleepBreathFrame());
-                        delayMs = 650 + (int)(Math.random() * 300); // ~0.7s gentle breath
-                        currentFrame = 0;
+                        mochiImage.setImageResource(idleFrames[0]);
+                        currentIdleAction = 0;
+                        animHandler.postDelayed(this, 2400 + (int)(Math.random() * 2600));
                     }
-                    animHandler.postDelayed(this, delayMs);
+                    return;
+                } else if (currentIdleAction == 2) {
+                    // Double blink
+                    if (idleActionStep == 0) {
+                        mochiImage.setImageResource(idleFrames.length > 2 ? idleFrames[2] : idleFrames[0]);
+                        idleActionStep = 1;
+                        animHandler.postDelayed(this, 120);
+                    } else if (idleActionStep == 1) {
+                        mochiImage.setImageResource(idleFrames[0]);
+                        idleActionStep = 2;
+                        animHandler.postDelayed(this, 90);
+                    } else if (idleActionStep == 2) {
+                        mochiImage.setImageResource(idleFrames.length > 2 ? idleFrames[2] : idleFrames[0]);
+                        idleActionStep = 3;
+                        animHandler.postDelayed(this, 110);
+                    } else {
+                        mochiImage.setImageResource(idleFrames[0]);
+                        currentIdleAction = 0;
+                        animHandler.postDelayed(this, 2600 + (int)(Math.random() * 2600));
+                    }
+                    return;
+                } else if (currentIdleAction == 3) {
+                    // Curious head tilt
+                    if (idleActionStep == 0) {
+                        mochiImage.setImageResource(getCuriousFrame());
+                        idleActionStep = 1;
+                        animHandler.postDelayed(this, 650);
+                    } else {
+                        mochiImage.setImageResource(idleFrames[0]);
+                        currentIdleAction = 0;
+                        animHandler.postDelayed(this, 2600 + (int)(Math.random() * 2400));
+                    }
+                    return;
+                } else {
+                    // Groom / sniff
+                    if (idleActionStep == 0) {
+                        mochiImage.setImageResource(getGroomFrame());
+                        idleActionStep = 1;
+                        animHandler.postDelayed(this, 650);
+                    } else {
+                        mochiImage.setImageResource(idleFrames[0]);
+                        currentIdleAction = 0;
+                        animHandler.postDelayed(this, 2600 + (int)(Math.random() * 2400));
+                    }
                     return;
                 }
+            }
+
+            if (animState == AnimState.SLEEP) {
+                if (!isDeepSleep) {
+                    int[] frames = getSleepIntroFrames();
+                    if (currentFrame < frames.length) {
+                        mochiImage.setImageResource(frames[currentFrame]);
+                        currentFrame++;
+                        animHandler.postDelayed(this, 260);
+                    } else {
+                        isDeepSleep = true;
+                        currentFrame = 0;
+                        mochiImage.setImageResource(getSleepStillFrame());
+                        animHandler.postDelayed(this, 3000 + (int)(Math.random() * 2400));
+                    }
+                } else {
+                    if (currentFrame == 0) {
+                        mochiImage.setImageResource(getSleepBreathFrame());
+                        currentFrame = 1;
+                        animHandler.postDelayed(this, 750);
+                    } else {
+                        mochiImage.setImageResource(getSleepStillFrame());
+                        currentFrame = 0;
+                        animHandler.postDelayed(this, 3000 + (int)(Math.random() * 2400));
+                    }
+                }
+                return;
+            }
+
+            int[] frames;
+            int delayMs = 140;
+            if (animState == AnimState.WALK) {
+                frames = getWalkFrames();
+                delayMs = 140; // Graceful, grounded hop/waddle pace
+            } else if (animState == AnimState.WAVE) {
+                frames = getWaveFrames();
+                delayMs = 140;
+            } else {
+                frames = getSadFrames();
+                delayMs = 340;
             }
 
             if (frames.length > 0) {
@@ -470,6 +574,8 @@ public class FloatingMochiService extends Service {
         if (animState != newState) {
             animState = newState;
             currentFrame = 0;
+            currentIdleAction = 0;
+            idleActionStep = 0;
             animHandler.removeCallbacks(animRunnable);
             animHandler.post(animRunnable);
         }
