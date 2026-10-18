@@ -7,6 +7,8 @@ interface MochiAvatarProps {
   size?: number;
   className?: string;
   onClick?: () => void;
+  onLongPress?: () => void;
+  onDoubleTap?: () => void;
   speedMs?: number;
   title?: string;
 }
@@ -19,7 +21,7 @@ interface Frame {
 }
 
 const SLEEP_LOOP_FRAMES: Frame[] = [
-  { sx: 432, sy: 470, sw: 81, sh: 84 }, // lying flat asleep
+  { sx: 432, sy: 470, sw: 81, sh: 84 }, // lying flat asleep (still)
   { sx: 519, sy: 470, sw: 78, sh: 84 }, // breathing softly asleep
 ];
 
@@ -69,13 +71,18 @@ export function MochiAvatar({
   size = 112,
   className = '',
   onClick,
+  onLongPress,
+  onDoubleTap,
   speedMs,
-  title = 'Mochi',
+  title = 'Companion',
 }: MochiAvatarProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [frameIndex, setFrameIndex] = useState(0);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const longPressTimer = useRef<any>(null);
+  const lastTapRef = useRef<number>(0);
+  const isPressing = useRef(false);
 
   // Load sprite sheet
   useEffect(() => {
@@ -90,9 +97,24 @@ export function MochiAvatar({
   const activeFrames = useMemo(() => FRAMES[state] || FRAMES.idle, [state]);
   const frameInterval = speedMs ?? DEFAULT_SPEEDS[state] ?? 160;
 
-  // Frame sequencer
+  // Frame sequencer: organic sleep with occasional breathing
   useEffect(() => {
     setFrameIndex(0);
+    if (state === 'sleep') {
+      let isBreathing = false;
+      let timer: any;
+      const scheduleNext = () => {
+        isBreathing = !isBreathing;
+        setFrameIndex(isBreathing ? 1 : 0);
+        const nextDelay = isBreathing
+          ? 650 + Math.random() * 300 // gentle breath
+          : 2800 + Math.random() * 2400; // calm stillness
+        timer = setTimeout(scheduleNext, nextDelay);
+      };
+      timer = setTimeout(scheduleNext, 2800);
+      return () => clearTimeout(timer);
+    }
+
     const interval = setInterval(() => {
       setFrameIndex((prev) => (prev + 1) % activeFrames.length);
     }, frameInterval);
@@ -138,12 +160,41 @@ export function MochiAvatar({
     );
   }, [frameIndex, activeFrames, loaded, size]);
 
+  const handlePointerDown = () => {
+    isPressing.current = true;
+    longPressTimer.current = setTimeout(() => {
+      if (isPressing.current) {
+        onLongPress?.();
+      }
+    }, 500);
+  };
+
+  const handlePointerUp = () => {
+    isPressing.current = false;
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    const now = Date.now();
+    if (now - lastTapRef.current < 380) {
+      lastTapRef.current = 0;
+      onDoubleTap?.();
+    } else {
+      lastTapRef.current = now;
+      onClick?.();
+    }
+  };
+
+  const handlePointerCancel = () => {
+    isPressing.current = false;
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  };
+
   return (
     <div
       role="button"
       tabIndex={0}
       title={title}
-      onClick={onClick}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();

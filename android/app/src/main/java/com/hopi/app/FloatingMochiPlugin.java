@@ -4,6 +4,7 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
@@ -223,6 +224,37 @@ public class FloatingMochiPlugin extends Plugin {
 
         JSObject ret = new JSObject();
         ret.put("recorded", true);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void getPendingVoiceReminders(PluginCall call) {
+        Context context = getContext();
+        SharedPreferences prefs = context.getSharedPreferences("hopi_companion_prefs", Context.MODE_PRIVATE);
+        String pending = prefs.getString("pending_voice_reminders", "[]");
+        JSObject ret = new JSObject();
+        ret.put("remindersJson", pending);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void clearPendingVoiceReminders(PluginCall call) {
+        Context context = getContext();
+        SharedPreferences prefs = context.getSharedPreferences("hopi_companion_prefs", Context.MODE_PRIVATE);
+        prefs.edit().putString("pending_voice_reminders", "[]").apply();
+        JSObject ret = new JSObject();
+        ret.put("cleared", true);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void setCompanionName(PluginCall call) {
+        String name = call.getString("name", "Mochi");
+        Context context = getContext();
+        SharedPreferences prefs = context.getSharedPreferences("hopi_companion_prefs", Context.MODE_PRIVATE);
+        prefs.edit().putString("companion_name", name).apply();
+        JSObject ret = new JSObject();
+        ret.put("saved", true);
         call.resolve(ret);
     }
 }

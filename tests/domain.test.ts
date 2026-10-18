@@ -512,24 +512,32 @@ describe('hydration & companion mood domain logic', () => {
   });
 
   describe('PhraseSelector domain logic', () => {
-    it('returns peaceful sleeping phrase during rest hours', async () => {
+    it('returns peaceful sleeping phrase with dynamic companion name during rest hours', async () => {
       const { PhraseSelector } = await import('../src/domain/companion/phrases');
       const selector = new PhraseSelector();
-      const phrase = selector.getPhrase(0.5, true, 2);
-      expect(phrase).toBe('Zzz... Mochi is resting peacefully 🌙');
+      expect(selector.getPhrase(0.5, true, 2, 'Mochi')).toBe('Zzz... Mochi is resting peacefully 🌙');
+      expect(selector.getPhrase(0.5, true, 2, 'Pippin')).toBe('Zzz... Pippin is resting peacefully 🌙');
     });
 
     it('returns water reminders when thirsty (hoursSinceWater >= 2)', async () => {
       const { PhraseSelector, WATER_REMINDERS } = await import('../src/domain/companion/phrases');
       const selector = new PhraseSelector();
-      const phrase = selector.getPhrase(2.5, false, 14);
-      expect(WATER_REMINDERS).toContain(phrase);
+      const phrase = selector.getPhrase(2.5, false, 14, 'Mochi');
+      const formattedPool = WATER_REMINDERS.map((r) => r.replace(/\{name\}/g, 'Mochi'));
+      expect(formattedPool).toContain(phrase);
+    });
+
+    it('returns midnight sleep reminder when screen is on after midnight', async () => {
+      const { PhraseSelector, MIDNIGHT_SLEEP_REMINDERS } = await import('../src/domain/companion/phrases');
+      const selector = new PhraseSelector();
+      const reminder = selector.getMidnightSleepReminder('Mochi');
+      expect(MIDNIGHT_SLEEP_REMINDERS).toContain(reminder);
     });
 
     it('returns exhausted sleep phrase when severely dehydrated (hoursSinceWater >= 4)', async () => {
       const { PhraseSelector } = await import('../src/domain/companion/phrases');
       const selector = new PhraseSelector();
-      const phrase = selector.getPhrase(4.5, false, 15);
+      const phrase = selector.getPhrase(4.5, false, 15, 'Mochi');
       expect(phrase).toMatch(/water|dehydrated|energy/i);
     });
 
@@ -543,6 +551,64 @@ describe('hydration & companion mood domain logic', () => {
         seen.add(p);
       }
       expect(seen.size).toBeGreaterThanOrEqual(3);
+    });
+  });
+
+  describe('voiceParser domain logic', () => {
+    it('correctly classifies a single task and extracts time and date', async () => {
+      const { parseVoiceInput } = await import('../src/domain/reminders/voiceParser');
+      const fixedNow = new Date('2026-10-19T10:00:00');
+      const result = parseVoiceInput('Remind me to pick up the package tomorrow at 8:00 PM', fixedNow);
+      expect(result.itemType).toBe('task');
+      expect(result.title).toBe('Pick up the package');
+      expect(result.time).toBe('08:00 PM');
+      expect(result.date).toBe('2026-10-20');
+      expect(result.recurring).toBe('none');
+      expect(result.emoji).toBe('📦');
+      expect(result.isComplete).toBe(true);
+    });
+
+    it('correctly classifies a recurring routine and cleans title', async () => {
+      const { parseVoiceInput } = await import('../src/domain/reminders/voiceParser');
+      const fixedNow = new Date('2026-10-19T10:00:00');
+      const result = parseVoiceInput('Remind me every month on the first rotary Tuesday to get the receipt at 9 am', fixedNow);
+      expect(result.itemType).toBe('routine');
+      expect(result.title).toBe('Get the receipt');
+      expect(result.time).toBe('09:00 AM');
+      expect(result.isComplete).toBe(true);
+    });
+
+    it('detects missing time and produces a conversational prompt', async () => {
+      const { parseVoiceInput } = await import('../src/domain/reminders/voiceParser');
+      const result = parseVoiceInput('Remind me to pick up the package');
+      expect(result.itemType).toBe('task');
+      expect(result.title).toBe('Pick up the package');
+      expect(result.time).toBeNull();
+      expect(result.isComplete).toBe(false);
+      expect(result.missingField).toBe('time');
+      expect(result.clarificationPrompt).toContain('What time should I remind you');
+    });
+
+    it('fills in missing slot with follow-up clarification answer', async () => {
+      const { parseVoiceInput, fillClarification } = await import('../src/domain/reminders/voiceParser');
+      const pending = parseVoiceInput('Remind me to pick up the package');
+      expect(pending.isComplete).toBe(false);
+
+      const resolved = fillClarification(pending, 'Tomorrow at 5 PM', new Date('2026-10-19T10:00:00'));
+      expect(resolved.isComplete).toBe(true);
+      expect(resolved.time).toBe('05:00 PM');
+      expect(resolved.date).toBe('2026-10-20');
+      expect(resolved.missingField).toBeNull();
+    });
+
+    it('infers correct emojis for health and wellness reminders', async () => {
+      const { inferEmoji } = await import('../src/domain/reminders/voiceParser');
+      expect(inferEmoji('Drink a glass of water')).toBe('💧');
+      expect(inferEmoji('Take morning vitamins')).toBe('💊');
+      expect(inferEmoji('Read book chapter')).toBe('📚');
+      expect(inferEmoji('Morning prayer and devotion')).toBe('🙏');
+      expect(inferEmoji('Call Mom for her birthday')).toBe('📞');
+      expect(inferEmoji('Evening stretching')).toBe('🏃');
     });
   });
 });

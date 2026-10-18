@@ -1,5 +1,6 @@
 package com.hopi.app;
 
+import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -13,10 +14,17 @@ import android.content.SharedPreferences;
 import android.content.pm.ServiceInfo;
 import android.graphics.PixelFormat;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.provider.Settings;
+import android.speech.RecognitionListener;
+import android.speech.RecognizerIntent;
+import android.speech.SpeechRecognizer;
+import android.speech.tts.TextToSpeech;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -26,7 +34,13 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.core.app.NotificationCompat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class FloatingMochiService extends Service {
     public static final String ACTION_SHOW_SPEECH = "com.hopi.app.ACTION_SHOW_SPEECH";
@@ -34,6 +48,7 @@ public class FloatingMochiService extends Service {
     public static final String EXTRA_SPEECH_TEXT = "extra_speech_text";
     private static final String PREFS_NAME = "hopi_companion_prefs";
     private static final String PREF_LAST_WATER = "last_water_time";
+    private static final String PREF_COMPANION_NAME = "companion_name";
     private static final String CHANNEL_ID = "hopi_companion_channel";
     private static final int NOTIFICATION_ID = 1001;
 
@@ -49,6 +64,14 @@ public class FloatingMochiService extends Service {
     private final Handler animHandler = new Handler(Looper.getMainLooper());
     private boolean isScreenOn = true, isManualAwake = false, isDeepSleep = false;
     private long lastManualWakeTime = 0;
+    private long lastMidnightReminderTime = 0;
+
+    // Voice recognition & Text-to-Speech
+    private SpeechRecognizer speechRecognizer;
+    private TextToSpeech tts;
+    private boolean isVoiceRecording = false;
+    private VoiceParser.ParsedVoiceReminder pendingClarification = null;
+    private long lastTapUpTime = 0;
 
     private static final int[] IDLE_FRAMES = {
         R.drawable.mochi_idle_0, R.drawable.mochi_idle_1, R.drawable.mochi_idle_2,
@@ -68,9 +91,11 @@ public class FloatingMochiService extends Service {
         R.drawable.mochi_sleep_0, R.drawable.mochi_sleep_1, R.drawable.mochi_sleep_2,
         R.drawable.mochi_sleep_3, R.drawable.mochi_sleep_4
     };
-    private static final int[] SLEEP_LOOP_FRAMES = {
-        R.drawable.mochi_sleep_5, R.drawable.mochi_sleep_6
-    };
+
+    private String getCompanionName() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        return prefs.getString(PREF_COMPANION_NAME, "Mochi");
+    }
 
     private boolean isRestHours() {
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
@@ -94,7 +119,8 @@ public class FloatingMochiService extends Service {
     private AnimState computeTargetState() {
         if (animState == AnimState.WALK || animState == AnimState.WAVE) return animState;
         if (isRestHours()) {
-            if (isManualAwake && (System.currentTimeMillis() - lastManualWakeTime < 15 * 60 * 1000L)) {
+            // Goes back to sleep ~1 minute after wake up
+            if (isManualAwake && (System.currentTimeMillis() - lastManualWakeTime < 60 * 1000L)) {
                 return AnimState.IDLE;
             }
             isManualAwake = false;
@@ -102,8 +128,8 @@ public class FloatingMochiService extends Service {
         }
         isManualAwake = false;
         float h = getHoursSinceWater();
-        if (h >= 4.0f) return AnimState.SLEEP; // Dehydrated exhaustion
-        if (h >= 2.5f) return AnimState.SAD;   // Thirsty
+        if (h >= 4.0f) return AnimState.SLEEP;
+        if (h >= 2.5f) return AnimState.SAD;
         return AnimState.IDLE;
     }
 
@@ -139,7 +165,18 @@ public class FloatingMochiService extends Service {
                     frames = SLEEP_INTRO_FRAMES; delayMs = 250;
                     if (currentFrame >= frames.length - 1) { isDeepSleep = true; currentFrame = 0; }
                 } else {
-                    frames = SLEEP_LOOP_FRAMES; delayMs = 850;
+                    // Organic sleep: stays mostly peaceful on still frame, occasional breath at varied intervals
+                    if (currentFrame == 0) {
+                        mochiImage.setImageResource(R.drawable.mochi_sleep_5);
+                        delayMs = 2800 + (int)(Math.random() * 2400); // 2.8s to 5.2s still
+                        currentFrame = 1;
+                    } else {
+                        mochiImage.setImageResource(R.drawable.mochi_sleep_6);
+                        delayMs = 650 + (int)(Math.random() * 300); // ~0.7s gentle breath
+                        currentFrame = 0;
+                    }
+                    animHandler.postDelayed(this, delayMs);
+                    return;
                 }
             }
 
@@ -168,6 +205,7 @@ public class FloatingMochiService extends Service {
     public void onCreate() {
         super.onCreate();
         ensureForegroundNotification();
+        initTts();
         IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
         filter.addAction(Intent.ACTION_SCREEN_ON);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -176,6 +214,41 @@ public class FloatingMochiService extends Service {
             registerReceiver(screenReceiver, filter);
         }
         initOverlay();
+    }
+
+    private void initTts() {
+        try {
+            tts = new TextToSpeech(getApplicationContext(), status -> {
+                if (status == TextToSpeech.SUCCESS && tts != null) {
+                    tts.setLanguage(Locale.US);
+                    tts.setPitch(1.2f);
+                    tts.setSpeechRate(0.95f);
+                }
+            });
+        } catch (Exception ignored) {}
+    }
+
+    private void speakTts(String text) {
+        if (tts != null && text != null && !text.isEmpty()) {
+            try {
+                // Strip emoji for clean speech output
+                String clean = text.replaceAll("[^\\p{L}\\p{Nd}\\p{P}\\s]", "").trim();
+                tts.speak(clean, TextToSpeech.QUEUE_FLUSH, null, "companion_voice");
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private void triggerHaptic() {
+        try {
+            Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+            if (v != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    v.vibrate(VibrationEffect.createOneShot(70, VibrationEffect.DEFAULT_AMPLITUDE));
+                } else {
+                    v.vibrate(70);
+                }
+            }
+        } catch (Exception ignored) {}
     }
 
     @Override
@@ -191,23 +264,34 @@ public class FloatingMochiService extends Service {
                         .putLong(PREF_LAST_WATER, System.currentTimeMillis()).apply();
                 isDeepSleep = false;
                 setAnimState(AnimState.WAVE);
-                showSpeechBubble(CompanionPhrases.getRandomWaterCelebration(), 4000);
+                showSpeechBubble(CompanionPhrases.getRandomWaterCelebration(getCompanionName()), 4000);
                 animHandler.postDelayed(() -> setAnimState(AnimState.IDLE), 2200);
             }
         }
         return START_STICKY;
     }
 
-    private static final long CHECKIN_INTERVAL_MS = 35 * 60 * 1000L;
+    private static final long CHECKIN_INTERVAL_MS = 20 * 60 * 1000L;
     private final Runnable periodicCheckinRunnable = new Runnable() {
         @Override
         public void run() {
-            if (isScreenOn && !isRestHours() && animState != AnimState.WALK) {
-                float h = getHoursSinceWater();
-                if (h >= 2.0f) {
-                    showSpeechBubble(CompanionPhrases.getRandomWaterReminder(), 5000);
-                } else if (Math.random() < 0.45) {
-                    showSpeechBubble(CompanionPhrases.getPhraseForContext(h, false, true), 4000);
+            if (isScreenOn) {
+                if (isRestHours()) {
+                    // Remind every hour if screen is still on after midnight
+                    long now = System.currentTimeMillis();
+                    if (now - lastMidnightReminderTime >= 55 * 60 * 1000L) {
+                        lastMidnightReminderTime = now;
+                        String sleepMsg = CompanionPhrases.getRandomMidnightSleepReminder(getCompanionName());
+                        showSpeechBubble(sleepMsg, 7000);
+                        speakTts(sleepMsg);
+                    }
+                } else if (animState != AnimState.WALK && !isVoiceRecording) {
+                    float h = getHoursSinceWater();
+                    if (h >= 2.0f) {
+                        showSpeechBubble(CompanionPhrases.getRandomWaterReminder(getCompanionName()), 5000);
+                    } else if (Math.random() < 0.40) {
+                        showSpeechBubble(CompanionPhrases.getPhraseForContext(h, false, true, getCompanionName()), 4000);
+                    }
                 }
             }
             animHandler.postDelayed(this, CHECKIN_INTERVAL_MS);
@@ -264,7 +348,7 @@ public class FloatingMochiService extends Service {
             try {
                 windowManager.addView(floatingView, params);
                 animHandler.post(animRunnable);
-                animHandler.postDelayed(periodicCheckinRunnable, 15 * 60 * 1000L);
+                animHandler.postDelayed(periodicCheckinRunnable, 10 * 60 * 1000L);
             } catch (Exception e) { stopSelf(); }
         }
     }
@@ -280,13 +364,198 @@ public class FloatingMochiService extends Service {
 
     private void showTapFeedback() {
         float h = getHoursSinceWater();
-        String phrase = CompanionPhrases.getPhraseForContext(h, isRestHours(), isManualAwake);
+        String phrase = CompanionPhrases.getPhraseForContext(h, isRestHours(), isManualAwake, getCompanionName());
         long duration = (h >= 4.0f || (isRestHours() && !isManualAwake)) ? 4500 : 4000;
         showSpeechBubble(phrase, duration);
     }
 
+    // Voice recording lifecycle
+    private void startVoiceListening() {
+        showSpeechBubble("Listening... 🎙️ Speak your reminder", 12000);
+        animHandler.post(() -> {
+            try {
+                if (speechRecognizer == null) {
+                    speechRecognizer = SpeechRecognizer.createSpeechRecognizer(getApplicationContext());
+                    speechRecognizer.setRecognitionListener(new VoiceRecognitionListener());
+                }
+                Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+                speechRecognizer.startListening(intent);
+            } catch (Exception e) {
+                showSpeechBubble("Mic ready! Tap to speak 🐰", 3500);
+                isVoiceRecording = false;
+            }
+        });
+    }
+
+    private void stopVoiceListening() {
+        isVoiceRecording = false;
+        showSpeechBubble("Thinking... 💭", 3500);
+        animHandler.post(() -> {
+            try {
+                if (speechRecognizer != null) {
+                    speechRecognizer.stopListening();
+                }
+            } catch (Exception ignored) {}
+        });
+    }
+
+    private class VoiceRecognitionListener implements RecognitionListener {
+        @Override
+        public void onReadyForSpeech(Bundle params) {}
+        @Override
+        public void onBeginningOfSpeech() {}
+        @Override
+        public void onRmsChanged(float rmsdB) {}
+        @Override
+        public void onBufferReceived(byte[] buffer) {}
+        @Override
+        public void onEndOfSpeech() {}
+        @Override
+        public void onError(int error) {
+            if (isVoiceRecording) {
+                isVoiceRecording = false;
+                showSpeechBubble("Didn't catch that. Tap again to retry! 🐰", 3500);
+            }
+        }
+        @Override
+        public void onResults(Bundle results) {
+            ArrayList<String> matches = (results != null) ? results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION) : null;
+            if (matches != null && !matches.isEmpty()) {
+                handleVoiceTranscript(matches.get(0));
+            } else {
+                showSpeechBubble("Didn't catch that. Tap again to retry! 🐰", 3500);
+            }
+        }
+        @Override
+        public void onPartialResults(Bundle partialResults) {}
+        @Override
+        public void onEvent(int eventType, Bundle params) {}
+    }
+
+    private void handleVoiceTranscript(String transcript) {
+        if (pendingClarification != null) {
+            VoiceParser.ParsedVoiceReminder resolved = VoiceParser.fillClarification(pendingClarification, transcript);
+            pendingClarification = null;
+            if (resolved.isComplete) {
+                saveAndScheduleVoiceReminder(resolved);
+            } else {
+                pendingClarification = resolved;
+                speakAndPromptClarification(resolved.clarificationPrompt);
+            }
+            return;
+        }
+
+        VoiceParser.ParsedVoiceReminder parsed = VoiceParser.parse(transcript);
+        if (parsed.isComplete) {
+            saveAndScheduleVoiceReminder(parsed);
+        } else {
+            pendingClarification = parsed;
+            speakAndPromptClarification(parsed.clarificationPrompt);
+        }
+    }
+
+    private void speakAndPromptClarification(String question) {
+        showSpeechBubble(question, 8000);
+        speakTts(question);
+        animHandler.postDelayed(() -> {
+            isVoiceRecording = true;
+            startVoiceListening();
+        }, 2200);
+    }
+
+    private void saveAndScheduleVoiceReminder(VoiceParser.ParsedVoiceReminder item) {
+        String id = "rem-voice-" + System.currentTimeMillis();
+        long triggerAtMillis = parseReminderTimestamp(item.date, item.time, item.recurring);
+
+        // Save to pending JSON for Hopi app auto-sync
+        try {
+            SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+            String existing = prefs.getString("pending_voice_reminders", "[]");
+            JSONArray arr = new JSONArray(existing);
+            JSONObject obj = new JSONObject();
+            obj.put("id", id);
+            obj.put("title", item.title);
+            obj.put("emoji", item.emoji);
+            obj.put("time", item.time);
+            obj.put("date", item.date);
+            obj.put("recurring", item.recurring);
+            obj.put("itemType", item.itemType);
+            obj.put("completed", false);
+            arr.put(obj);
+            prefs.edit().putString("pending_voice_reminders", arr.toString()).apply();
+        } catch (Exception ignored) {}
+
+        // Schedule AlarmManager
+        if (triggerAtMillis > System.currentTimeMillis() + 2000L) {
+            AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+            Intent intent = new Intent(this, ReminderAlarmReceiver.class);
+            intent.putExtra("id", id);
+            intent.putExtra("title", item.title);
+            intent.putExtra("emoji", item.emoji);
+            PendingIntent pi = PendingIntent.getBroadcast(this, id.hashCode(), intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0));
+            if (alarmManager != null) {
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pi);
+                    } else {
+                        alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pi);
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+
+        String confirm = String.format("Added %s: %s at %s ✨", item.itemType, item.title, item.time);
+        showSpeechBubble(confirm, 5000);
+        speakTts(confirm);
+        setAnimState(AnimState.WAVE);
+        animHandler.postDelayed(() -> setAnimState(AnimState.IDLE), 2400);
+    }
+
+    private long parseReminderTimestamp(String dateStr, String timeStr, String recurring) {
+        try {
+            Calendar cal = Calendar.getInstance();
+            if (dateStr != null && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}$")) {
+                String[] parts = dateStr.split("-");
+                cal.set(Calendar.YEAR, Integer.parseInt(parts[0]));
+                cal.set(Calendar.MONTH, Integer.parseInt(parts[1]) - 1);
+                cal.set(Calendar.DAY_OF_MONTH, Integer.parseInt(parts[2]));
+            }
+
+            if (timeStr != null) {
+                SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.US);
+                Date parsedTime = sdf.parse(timeStr.trim());
+                if (parsedTime != null) {
+                    Calendar timeCal = Calendar.getInstance();
+                    timeCal.setTime(parsedTime);
+                    cal.set(Calendar.HOUR_OF_DAY, timeCal.get(Calendar.HOUR_OF_DAY));
+                    cal.set(Calendar.MINUTE, timeCal.get(Calendar.MINUTE));
+                    cal.set(Calendar.SECOND, 0);
+                    cal.set(Calendar.MILLISECOND, 0);
+                }
+            }
+
+            if (cal.getTimeInMillis() <= System.currentTimeMillis() + 2000L && !"none".equalsIgnoreCase(recurring)) {
+                cal.add(Calendar.DAY_OF_YEAR, 1);
+            }
+            return cal.getTimeInMillis();
+        } catch (Exception e) {
+            return System.currentTimeMillis() + 3600000L;
+        }
+    }
+
     private void setupTouchListener(View view) {
         final int touchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
+        final Runnable longPressRunnable = () -> {
+            if (!isVoiceRecording) {
+                isVoiceRecording = true;
+                triggerHaptic();
+                startVoiceListening();
+            }
+        };
+
         view.setOnTouchListener(new View.OnTouchListener() {
             private int initialX, initialY;
             private float initialTouchX, initialTouchY;
@@ -303,6 +572,7 @@ public class FloatingMochiService extends Service {
                         lastTouchX = event.getRawX();
                         touchStartTime = System.currentTimeMillis();
                         isDragging = false;
+                        animHandler.postDelayed(longPressRunnable, 500);
                         return true;
 
                     case MotionEvent.ACTION_MOVE:
@@ -312,6 +582,7 @@ public class FloatingMochiService extends Service {
 
                         if (!isDragging && (Math.abs(deltaX) > touchSlop || Math.abs(deltaY) > touchSlop)) {
                             isDragging = true;
+                            animHandler.removeCallbacks(longPressRunnable);
                             isManualAwake = true;
                             lastManualWakeTime = System.currentTimeMillis();
                             isDeepSleep = false;
@@ -335,12 +606,36 @@ public class FloatingMochiService extends Service {
                         return true;
 
                     case MotionEvent.ACTION_UP:
-                        long duration = System.currentTimeMillis() - touchStartTime;
+                        animHandler.removeCallbacks(longPressRunnable);
                         if (isDragging) {
                             setAnimState(AnimState.IDLE);
-                        } else if (duration < 500) {
-                            showTapFeedback();
-                            animHandler.postDelayed(() -> openHopiApp(), 500);
+                            return true;
+                        }
+
+                        // Long press completed and finger released: keep mic recording!
+                        if (isVoiceRecording && (System.currentTimeMillis() - touchStartTime >= 500)) {
+                            return true;
+                        }
+
+                        // Check for Double-Tap (< 380ms)
+                        long now = System.currentTimeMillis();
+                        if (now - lastTapUpTime < 380) {
+                            lastTapUpTime = 0;
+                            if (isVoiceRecording) {
+                                triggerHaptic();
+                                stopVoiceListening();
+                                return true;
+                            }
+                        } else {
+                            lastTapUpTime = now;
+                            if (!isVoiceRecording && (now - touchStartTime < 500)) {
+                                showTapFeedback();
+                                animHandler.postDelayed(() -> {
+                                    if (System.currentTimeMillis() - lastTapUpTime >= 380 && !isVoiceRecording) {
+                                        openHopiApp();
+                                    }
+                                }, 400);
+                            }
                         }
                         return true;
                 }
@@ -366,8 +661,8 @@ public class FloatingMochiService extends Service {
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID, "Hopi Companion Service", NotificationManager.IMPORTANCE_LOW);
-            channel.setDescription("Shows Mochi floating on your screen");
+                    CHANNEL_ID, "Companion Service", NotificationManager.IMPORTANCE_LOW);
+            channel.setDescription("Shows your companion floating on your screen");
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) manager.createNotificationChannel(channel);
         }
@@ -377,7 +672,8 @@ public class FloatingMochiService extends Service {
         PendingIntent pi = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class),
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Hopi Companion Active").setContentText("Mochi is with you on your home screen ✨")
+                .setContentTitle(getCompanionName() + " is active")
+                .setContentText(getCompanionName() + " is with you on your home screen ✨")
                 .setSmallIcon(R.mipmap.ic_launcher).setContentIntent(pi).setPriority(NotificationCompat.PRIORITY_LOW).build();
     }
 
@@ -386,6 +682,14 @@ public class FloatingMochiService extends Service {
         super.onDestroy();
         try { unregisterReceiver(screenReceiver); } catch (Exception ignored) {}
         animHandler.removeCallbacksAndMessages(null);
+        if (speechRecognizer != null) {
+            try { speechRecognizer.destroy(); } catch (Exception ignored) {}
+            speechRecognizer = null;
+        }
+        if (tts != null) {
+            try { tts.stop(); tts.shutdown(); } catch (Exception ignored) {}
+            tts = null;
+        }
         if (floatingView != null && windowManager != null) {
             try { windowManager.removeView(floatingView); } catch (Exception ignored) {}
             floatingView = null;

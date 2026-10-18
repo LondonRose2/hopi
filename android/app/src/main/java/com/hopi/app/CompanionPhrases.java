@@ -18,14 +18,14 @@ public class CompanionPhrases {
         "Stay refreshed! Your body will thank you 🌊✨",
         "A quick water break can brighten your day! 🚰🌸",
         "Hydration check! Grab a cool glass of water 💧🌿",
-        "Mochi's ears perk up for water time! 🐰💧",
+        "%s's ears perk up for water time! 🐰💧",
         "Don't forget to nourish yourself with some water 💧🤍",
         "Sip sip! Staying hydrated keeps your mind clear ✨💧",
-        "Water is life! Have a refreshing sip with Mochi 💧🫧",
+        "Water is life! Have a refreshing sip with %s 💧🫧",
         "Take a little pause and drink some water 💧☁️",
         "A cup of water right now would feel wonderful 💧🍵",
         "Stay hydrated, stay glowing! ✨💧",
-        "Mochi is cheering for your hydration today! 🐰💧",
+        "%s is cheering for your hydration today! 🐰💧",
         "A little water goes a long way to feeling great 💧🌱",
         "Pour a fresh glass of water and enjoy every sip 💧🕊️"
     };
@@ -33,16 +33,16 @@ public class CompanionPhrases {
     // 2. Refreshment Celebrations (After Hydrating)
     public static final String[] WATER_CELEBRATIONS = {
         "Ah, refreshing! Thank you for hydrating! 💧✨",
-        "Mochi feels energized and happy! Yay for water! 🐰💧",
+        "%s feels energized and happy! Yay for water! 🐰💧",
         "Hydration complete! You're glowing ✨🌸",
         "Delicious! Keep up the wonderful care for yourself 💧🌿",
-        "Mochi wiggles happily! Water does wonders! 🐰🎉"
+        "%s wiggles happily! Water does wonders! 🐰🎉"
     };
 
     // 3. Gentle Encouragement & Warmth
     public static final String[] ENCOURAGEMENTS = {
         "You're doing wonderfully, one step at a time ✨",
-        "Mochi believes in you, always 🐰🤍",
+        "%s believes in you, always 🐰🤍",
         "Be gentle with yourself today 🌿",
         "Whatever comes today, you've got this 🌟",
         "Your best is always enough 🌸",
@@ -52,7 +52,7 @@ public class CompanionPhrases {
         "Take pride in the little victories today 🎈",
         "You are worthy of kindness and patience 🕊️",
         "Everything will unfold in its own good time 🌼",
-        "Mochi is right here beside you 🐰🤍"
+        "%s is right here beside you 🐰🤍"
     };
 
     // 4. Mindfulness & Calm Breathing
@@ -71,20 +71,20 @@ public class CompanionPhrases {
 
     // 5. Playful & Sweet Companion Interactions
     public static final String[] PLAYFUL = {
-        "Mochi is right here watching over you! 🐰",
-        "*boop* Mochi wiggles its soft ears happily! 🐾",
+        "%s is right here watching over you! 🐰",
+        "*boop* %s wiggles its soft ears happily! 🐾",
         "Did you know rabbits hop when they're excited? Hop! 🐰✨",
         "Sending a pocketful of sunshine your way ☀️",
-        "Mochi is giving you a warm bunny hug 🐰🫂",
+        "%s is giving you a warm bunny hug 🐰🫂",
         "Just checking in on my favorite human! 💕",
-        "*twitch* Mochi's nose twitched hello! 🐰🌸",
-        "Mochi curled up next to your pocket for good luck 🍀"
+        "*twitch* %s's nose twitched hello! 🐰🌸",
+        "%s curled up next to your pocket for good luck 🍀"
     };
 
     // 6. Time-of-Day Specific Greetings
     public static final String[] MORNING = {
         "Good morning! Wishing you a peaceful start to the day ☀️",
-        "The sun is up, and Mochi is so happy to see you! 🌅",
+        "The sun is up, and %s is so happy to see you! 🌅",
         "Start this morning with kindness to yourself ☕✨",
         "A brand new day full of gentle possibilities 🌸"
     };
@@ -107,33 +107,38 @@ public class CompanionPhrases {
         "Almost bedtime. Let tonight bring deep rest 🌙",
         "Soft blankets and calm dreams await 🛏️✨",
         "Rest well tonight, you deserve restful sleep 🌌",
-        "Mochi will keep watch while you rest peacefully 🐰💤"
+        "%s will keep watch while you rest peacefully 🐰💤"
     };
 
-    /**
-     * Get a non-repeating phrase tailored to the current context.
-     */
-    public static synchronized String getPhraseForContext(float hoursSinceWater, boolean isRestHours, boolean isManualAwake) {
+    // 7. Midnight Hourly Sleep Reminders (when screen is on after midnight)
+    public static final String[] MIDNIGHT_SLEEP_REMINDERS = {
+        "It's past midnight... time to close your eyes and rest 🌙",
+        "The screen is still on, but your mind needs gentle sleep 🛏️✨",
+        "It's late into the night... your body deserves deep sleep 🌌",
+        "Please take care of yourself tonight and rest your eyes 🤍☁️",
+        "A quiet night awaits. Time to drift off to sleep 💤🌿"
+    };
+
+    public static synchronized String getPhraseForContext(float hoursSinceWater, boolean isRestHours, boolean isManualAwake, String companionName) {
+        if (companionName == null || companionName.isEmpty()) companionName = "Your companion";
         if (isRestHours && !isManualAwake) {
-            return "Zzz... Mochi is resting peacefully 🌙";
+            return String.format("Zzz... %s is resting peacefully 🌙", companionName);
         }
 
         // Hydration states
         if (hoursSinceWater >= 4.0f) {
             String[] tired = {
-                "Mochi has no energy... need water 💧😴",
-                "Mochi is so sleepy and dehydrated... please drink water 💧",
-                "Water break needed! Mochi is feeling faint 💧😴"
+                "%s has no energy... need water 💧😴",
+                "%s is so sleepy and dehydrated... please drink water 💧",
+                "Water break needed! %s is feeling faint 💧😴"
             };
-            return pickNonRepeating(tired);
+            return format(pickNonRepeating(tired), companionName);
         }
 
         if (hoursSinceWater >= 2.0f) {
-            // Remind to hydrate with great variety
-            return pickNonRepeating(WATER_REMINDERS);
+            return format(pickNonRepeating(WATER_REMINDERS), companionName);
         }
 
-        // If well hydrated, compose a diverse candidate pool
         List<String> pool = new ArrayList<>();
         Collections.addAll(pool, ENCOURAGEMENTS);
         Collections.addAll(pool, MINDFULNESS);
@@ -150,19 +155,32 @@ public class CompanionPhrases {
             Collections.addAll(pool, NIGHT);
         }
 
-        return pickNonRepeating(pool.toArray(new String[0]));
+        return format(pickNonRepeating(pool.toArray(new String[0])), companionName);
     }
 
-    public static synchronized String getRandomWaterCelebration() {
-        return pickNonRepeating(WATER_CELEBRATIONS);
+    public static synchronized String getRandomWaterCelebration(String companionName) {
+        return format(pickNonRepeating(WATER_CELEBRATIONS), companionName != null ? companionName : "Your companion");
     }
 
-    public static synchronized String getRandomWaterReminder() {
-        return pickNonRepeating(WATER_REMINDERS);
+    public static synchronized String getRandomWaterReminder(String companionName) {
+        return format(pickNonRepeating(WATER_REMINDERS), companionName != null ? companionName : "Your companion");
+    }
+
+    public static synchronized String getRandomMidnightSleepReminder(String companionName) {
+        return format(pickNonRepeating(MIDNIGHT_SLEEP_REMINDERS), companionName != null ? companionName : "Your companion");
+    }
+
+    private static String format(String template, String name) {
+        if (template == null) return "";
+        if (name == null || name.isEmpty()) name = "Your companion";
+        if (template.contains("%s")) {
+            try { return String.format(template, name); } catch (Exception ignored) {}
+        }
+        return template.replace("{name}", name).replace("Mochi", name);
     }
 
     private static String pickNonRepeating(String[] candidates) {
-        if (candidates == null || candidates.length == 0) return "Mochi is right here 🐰";
+        if (candidates == null || candidates.length == 0) return "Right here beside you 🐰";
         List<String> available = new ArrayList<>();
         for (String c : candidates) {
             if (!recentHistory.contains(c)) {

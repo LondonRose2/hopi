@@ -4,3 +4,4 @@ export * from './sleepSchedule';
 export * from './grouping';
 export * from './defaultData';
 export * from './hydration';
+export * from './voiceParser';

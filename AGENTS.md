@@ -62,12 +62,13 @@ hopi/
     domain/
       companion/
         phrases.ts      # 50+ diverse non-repeating phrases & selector engine (<150 lines)
-      reminders/        # Pure domain calculations (schemas, grouping, sleep schedule, hydration)
+      reminders/        # Pure domain calculations (schemas, grouping, sleep schedule, hydration, voiceParser)
     services/
       nativeOverlay.ts  # Bridge to Android native floating overlay & alarms (<100 lines)
   android/
     app/src/main/java/com/hopi/app/
       CompanionPhrases.java      # Android native phrase catalog & history buffer
+      VoiceParser.java           # Native voice parser & intent extractor
       FloatingMochiService.java  # Android WindowManager overlay service (drags on home screen)
       FloatingMochiPlugin.java   # Capacitor bridge for overlay & reminder alarms
       ReminderAlarmReceiver.java # Android Alarm Receiver for push notifications & speech bubbles

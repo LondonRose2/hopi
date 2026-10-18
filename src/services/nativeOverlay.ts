@@ -136,4 +136,28 @@ export const floatingOverlayService = {
       return false;
     }
   },
+
+  async getPendingVoiceReminders(): Promise<any[]> {
+    if (!Capacitor.isNativePlatform()) return [];
+    try {
+      const res = await (NativeFloatingMochi as any).getPendingVoiceReminders();
+      return res?.remindersJson ? JSON.parse(res.remindersJson) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  async clearPendingVoiceReminders(): Promise<void> {
+    if (!Capacitor.isNativePlatform()) return;
+    try {
+      await (NativeFloatingMochi as any).clearPendingVoiceReminders();
+    } catch {}
+  },
+
+  async setCompanionName(name: string): Promise<void> {
+    if (!Capacitor.isNativePlatform()) return;
+    try {
+      await (NativeFloatingMochi as any).setCompanionName({ name });
+    } catch {}
+  },
 };

@@ -5,29 +5,29 @@ export const WATER_REMINDERS = [
   'Stay refreshed! Your body will thank you 🌊✨',
   'A quick water break can brighten your day! 🚰🌸',
   'Hydration check! Grab a cool glass of water 💧🌿',
-  "Mochi's ears perk up for water time! 🐰💧",
+  "{name}'s ears perk up for water time! 🐰💧",
   'Don’t forget to nourish yourself with some water 💧🤍',
   'Sip sip! Staying hydrated keeps your mind clear ✨💧',
-  'Water is life! Have a refreshing sip with Mochi 💧🫧',
+  'Water is life! Have a refreshing sip with {name} 💧🫧',
   'Take a little pause and drink some water 💧☁️',
   'A cup of water right now would feel wonderful 💧🍵',
   'Stay hydrated, stay glowing! ✨💧',
-  'Mochi is cheering for your hydration today! 🐰💧',
+  '{name} is cheering for your hydration today! 🐰💧',
   'A little water goes a long way to feeling great 💧🌱',
   'Pour a fresh glass of water and enjoy every sip 💧🕊️',
 ] as const;
 
 export const WATER_CELEBRATIONS = [
   'Ah, refreshing! Thank you for hydrating! 💧✨',
-  'Mochi feels energized and happy! Yay for water! 🐰💧',
+  '{name} feels energized and happy! Yay for water! 🐰💧',
   'Hydration complete! You are glowing ✨🌸',
   'Delicious! Keep up the wonderful care for yourself 💧🌿',
-  'Mochi wiggles happily! Water does wonders! 🐰🎉',
+  '{name} wiggles happily! Water does wonders! 🐰🎉',
 ] as const;
 
 export const ENCOURAGEMENTS = [
   "You're doing wonderfully, one step at a time ✨",
-  'Mochi believes in you, always 🐰🤍',
+  '{name} believes in you, always 🐰🤍',
   'Be gentle with yourself today 🌿',
   "Whatever comes today, you've got this 🌟",
   'Your best is always enough 🌸',
@@ -37,7 +37,7 @@ export const ENCOURAGEMENTS = [
   'Take pride in the little victories today 🎈',
   'You are worthy of kindness and patience 🕊️',
   'Everything will unfold in its own good time 🌼',
-  'Mochi is right here beside you 🐰🤍',
+  '{name} is right here beside you 🐰🤍',
 ] as const;
 
 export const MINDFULNESS = [
@@ -54,19 +54,19 @@ export const MINDFULNESS = [
 ] as const;
 
 export const PLAYFUL = [
-  'Mochi is right here watching over you! 🐰',
-  '*boop* Mochi wiggles its soft ears happily! 🐾',
+  '{name} is right here watching over you! 🐰',
+  '*boop* {name} wiggles its soft ears happily! 🐾',
   'Did you know rabbits hop when they are excited? Hop! 🐰✨',
   'Sending a pocketful of sunshine your way ☀️',
-  'Mochi is giving you a warm bunny hug 🐰🫂',
+  '{name} is giving you a warm bunny hug 🐰🫂',
   'Just checking in on my favorite human! 💕',
-  '*twitch* Mochi’s nose twitched hello! 🐰🌸',
-  'Mochi curled up next to your pocket for good luck 🍀',
+  '*twitch* {name}’s nose twitched hello! 🐰🌸',
+  '{name} curled up next to your pocket for good luck 🍀',
 ] as const;
 
 export const MORNING_PHRASES = [
   'Good morning! Wishing you a peaceful start to the day ☀️',
-  'The sun is up, and Mochi is so happy to see you! 🌅',
+  'The sun is up, and {name} is so happy to see you! 🌅',
   'Start this morning with kindness to yourself ☕✨',
   'A brand new day full of gentle possibilities 🌸',
 ] as const;
@@ -89,7 +89,15 @@ export const NIGHT_PHRASES = [
   'Almost bedtime. Let tonight bring deep rest 🌙',
   'Soft blankets and calm dreams await 🛏️✨',
   'Rest well tonight, you deserve restful sleep 🌌',
-  'Mochi will keep watch while you rest peacefully 🐰💤',
+  '{name} will keep watch while you rest peacefully 🐰💤',
+] as const;
+
+export const MIDNIGHT_SLEEP_REMINDERS = [
+  'It is past midnight... time to close your eyes and rest 🌙',
+  'The screen is still on, but your mind needs gentle sleep 🛏️✨',
+  'It is late into the night... your body deserves deep sleep 🌌',
+  'Please take care of yourself tonight and rest your eyes 🤍☁️',
+  'A quiet night awaits. Time to drift off to sleep 💤🌿',
 ] as const;
 
 // Non-repeating selector engine
@@ -101,8 +109,12 @@ export class PhraseSelector {
     this.maxHistory = maxHistory;
   }
 
-  public pick(candidates: readonly string[]): string {
-    if (!candidates || candidates.length === 0) return 'Mochi is right here 🐰';
+  public format(template: string, companionName = 'Mochi'): string {
+    return template.replace(/\{name\}/g, companionName);
+  }
+
+  public pick(candidates: readonly string[], companionName = 'Mochi'): string {
+    if (!candidates || candidates.length === 0) return `${companionName} is right here 🐰`;
     const unpicked = candidates.filter((c) => !this.history.includes(c));
     const pool = unpicked.length > 0 ? unpicked : candidates;
     const index = Math.floor(Math.random() * pool.length);
@@ -112,22 +124,27 @@ export class PhraseSelector {
     if (this.history.length > this.maxHistory) {
       this.history.shift();
     }
-    return chosen;
+    return this.format(chosen, companionName);
   }
 
-  public getPhrase(hoursSinceWater: number, isRestHours: boolean, currentHour: number): string {
+  public getPhrase(
+    hoursSinceWater: number,
+    isRestHours: boolean,
+    currentHour: number,
+    companionName = 'Mochi'
+  ): string {
     if (isRestHours) {
-      return 'Zzz... Mochi is resting peacefully 🌙';
+      return `Zzz... ${companionName} is resting peacefully 🌙`;
     }
     if (hoursSinceWater >= 4.0) {
       return this.pick([
-        'Mochi has no energy... need water 💧😴',
-        'Mochi is sleepy and dehydrated... please drink water 💧',
-        'Water break needed! Mochi is feeling faint 💧😴',
-      ]);
+        '{name} has no energy... need water 💧😴',
+        '{name} is sleepy and dehydrated... please drink water 💧',
+        'Water break needed! {name} is feeling faint 💧😴',
+      ], companionName);
     }
     if (hoursSinceWater >= 2.0) {
-      return this.pick(WATER_REMINDERS);
+      return this.pick(WATER_REMINDERS, companionName);
     }
 
     const pool: string[] = [...ENCOURAGEMENTS, ...MINDFULNESS, ...PLAYFUL];
@@ -136,7 +153,11 @@ export class PhraseSelector {
     else if (currentHour >= 17 && currentHour < 21) pool.push(...EVENING_PHRASES);
     else pool.push(...NIGHT_PHRASES);
 
-    return this.pick(pool);
+    return this.pick(pool, companionName);
+  }
+
+  public getMidnightSleepReminder(companionName = 'Mochi'): string {
+    return this.pick(MIDNIGHT_SLEEP_REMINDERS, companionName);
   }
 }
 

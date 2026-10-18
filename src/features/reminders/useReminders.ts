@@ -20,7 +20,7 @@ export function useReminders(onCheer?: () => void) {
     } catch {}
   }, []);
 
-  // Sync scheduled reminders and request notification permission on mount
+  // Sync scheduled reminders, ingest voice reminders, and request notification permission
   useEffect(() => {
     floatingOverlayService.requestNotificationPermission();
     reminders.forEach((r) => {
@@ -28,6 +28,21 @@ export function useReminders(onCheer?: () => void) {
         floatingOverlayService.scheduleReminder(r);
       }
     });
+
+    const checkVoiceReminders = async () => {
+      const pending = await floatingOverlayService.getPendingVoiceReminders();
+      if (pending && pending.length > 0) {
+        setReminders((prev) => {
+          const newItems = pending.filter((p: Reminder) => !prev.some((r) => r.id === p.id));
+          if (newItems.length === 0) return prev;
+          const merged = [...newItems, ...prev];
+          persist(merged);
+          return merged;
+        });
+        await floatingOverlayService.clearPendingVoiceReminders();
+      }
+    };
+    checkVoiceReminders();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleToggle = useCallback((id: string) => {

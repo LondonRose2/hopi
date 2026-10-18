@@ -11,25 +11,24 @@ _Last updated: 2026-10-19 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 
 ## 📍 Where we are
 - **GitHub Repository:** [`https://github.com/LondonRose2/hopi`](https://github.com/LondonRose2/hopi) (pushed & tracked on `master`).
-- **Release APK Built (v1.0.7):**
-  - **Direct Download Link:** [`https://github.com/LondonRose2/hopi/releases/download/v1.0.7/hopi.apk`](https://github.com/LondonRose2/hopi/releases/download/v1.0.7/hopi.apk)
-  - **Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.0.7`](https://github.com/LondonRose2/hopi/releases/tag/v1.0.7)
-  - **Local APK Path:** `release/hopi.apk` (10.32 MB).
+- **Release APK Built (v1.0.8):**
+  - **Direct Download Link:** [`https://github.com/LondonRose2/hopi/releases/download/v1.0.8/hopi.apk`](https://github.com/LondonRose2/hopi/releases/download/v1.0.8/hopi.apk)
+  - **Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.0.8`](https://github.com/LondonRose2/hopi/releases/tag/v1.0.8)
+  - **Local APK Path:** `release/hopi.apk` (10.33 MB).
 - **Features Included:**
-  - **50+ Diverse Non-Repeating Companion Phrases:** Replaced the repetitive 4-phrase cycle with a rich catalog of over 50 varied phrases in `CompanionPhrases.java` and `phrases.ts`:
-    - **Varied Water Reminders (14 phrases):** Warm, caring prompts to hydrate without feeling like robotic commands.
-    - **Hydration Celebrations (5 phrases):** Joyful praise when water is recorded.
-    - **Gentle Encouragements (12 phrases):** Kind, comforting reminders of progress and patience.
-    - **Mindfulness & Calm Breathing (10 phrases):** Unclenching jaw, grounding, breathing exercises.
-    - **Playful Companion Interactions (8 phrases):** Bunny hops, nose twitches, ear wiggles, and hugs.
-    - **Time-of-Day Contextual Greetings (16 phrases):** Customized for Morning, Afternoon, Evening, and Night.
-  - **Non-Repeating History Buffer (Size 12):** Prevents phrases from repeating sequentially or within recent interactions.
-  - **Regular Gentle Hydration Check-ins:** Added a 35-minute periodic check-in in `FloatingMochiService`. If it has been >= 2 hours since drinking water, Mochi displays a gentle reminder bubble on the home screen overlay without being intrusive.
-  - **Prevented Premature Alarms & Push Notifications:** Added past-timestamp guards in both TypeScript (`nativeOverlay.ts`) and Android Java (`FloatingMochiPlugin.java`).
-  - **Dynamic Today Date Handling:** Replaced hardcoded date strings with `getTodayDateString()`.
-  - **Fixed Non-Repeating Sleep Loop & Drag Direction Flip:** Isolated deep sleep loop to breathing frames 5 & 6, and touch delta to per-event coordinates.
+  - **Voice Reminder System (Long-Press to Record, Double-Tap to Finish):**
+    - **Long-Press:** Hold down on the companion avatar for > 500ms. Triggers haptic feedback and opens the microphone (`Listening... 🎙️`).
+    - **Finger Release:** When you let go, the microphone stays recording uninterrupted.
+    - **Double-Tap:** Tapping the companion twice stops the microphone, triggers a confirmation buzz, and processes the voice input.
+    - **Zero-LLM Intent & Slot Engine (`VoiceParser.java` & `voiceParser.ts`):** 100% offline, instant (0ms latency), and free. Automatically classifies **Tasks** (one-off) vs. **Routines** (recurring: daily, weekly, weekdays).
+    - **Conversational Clarification Loop:** If time or date is missing, companion speaks aloud via Android `TextToSpeech` (*"What time should I remind you about [title]?"*) and re-opens the microphone for the follow-up answer before scheduling with `AlarmManager`.
+  - **No Hardcoded Avatar Name:** All phrases, service notifications, and UI status strings use dynamic avatar name formatting (`getCompanionName()` / `%s` / `{name}`), seamlessly supporting any present or future companion avatars.
+  - **1-Minute Nighttime Sleep Return:** When manually awakened during rest hours, the companion automatically returns to sleep after 1 minute of inactivity rather than staying awake.
+  - **Organic, Non-Robotic Sleep Animation:** Eliminated the mechanical 850ms left-right metronome ticking. The companion stays peacefully still in slumber for 2.8s–5.2s, taking an occasional soft breath for ~0.7s at natural, randomized intervals.
+  - **Hourly Midnight Sleep Reminders:** Proactively checks every hour between 12:00 AM and 8:00 AM; if the phone screen is still on, gently reminds the user to sleep with soothing phrases and speech.
+  - **50+ Diverse Non-Repeating Companion Phrases:** 12-item history buffer prevents phrase repetition.
 - **Test & Type Health:**
-  - 58 passing tests in Vitest (`npm.cmd test -- --run`).
+  - 64 passing tests in Vitest (`npm.cmd test -- --run`).
   - Zero TypeScript errors (`npm.cmd run typecheck` / `npm.cmd run build`).
   - Strict line budgets respected on all files (views <100 lines, components <200 lines, services <300 lines).
 - **Context System:** [`AGENTS.md`](file:///c:/Users/Rachel/Documents/apps/hopi/AGENTS.md) and [`CURRENT_STATUS.md`](file:///c:/Users/Rachel/Documents/apps/hopi/CURRENT_STATUS.md) fully up-to-date.
