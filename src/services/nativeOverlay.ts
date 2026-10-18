@@ -9,6 +9,7 @@ interface FloatingMochiPlugin {
   scheduleReminder(options: { id: string; title: string; emoji: string; triggerAtMillis: number }): Promise<{ scheduled: boolean }>;
   cancelReminder(options: { id: string }): Promise<{ cancelled: boolean }>;
   showSpeechBubble(options: { text: string }): Promise<{ shown: boolean }>;
+  recordWaterIntake(): Promise<{ recorded: boolean }>;
 }
 
 const NativeFloatingMochi = registerPlugin<FloatingMochiPlugin>('FloatingMochi');
@@ -117,6 +118,16 @@ export const floatingOverlayService = {
     try {
       const res = await NativeFloatingMochi.showSpeechBubble({ text });
       return res?.shown ?? false;
+    } catch {
+      return false;
+    }
+  },
+
+  async recordWaterIntake(): Promise<boolean> {
+    if (!Capacitor.isNativePlatform()) return false;
+    try {
+      const res = await NativeFloatingMochi.recordWaterIntake();
+      return res?.recorded ?? false;
     } catch {
       return false;
     }

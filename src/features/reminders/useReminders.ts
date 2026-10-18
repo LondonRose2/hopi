@@ -37,7 +37,12 @@ export function useReminders(onCheer?: () => void) {
       const target = updated.find((r) => r.id === id);
       if (target?.completed) {
         onCheer?.();
-        floatingOverlayService.showSpeechBubble(`Great job! ✨ ${target.title}`);
+        if (target.emoji === '💧' || target.emoji === '🍵' || target.title.toLowerCase().includes('water')) {
+          localStorage.setItem('hopi_last_water_time', String(Date.now()));
+          floatingOverlayService.recordWaterIntake();
+        } else {
+          floatingOverlayService.showSpeechBubble(`Great job! ✨ ${target.title}`);
+        }
         floatingOverlayService.cancelReminder(id);
       } else if (target && !target.completed) {
         floatingOverlayService.scheduleReminder(target);

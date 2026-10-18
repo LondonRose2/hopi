@@ -15,6 +15,9 @@ import {
   UPLIFTING_VERSES,
   getVerseForDate,
   createDefaultReminders,
+  calculateHydrationStatus,
+  isWaterReminder,
+  computeCompanionMood,
   type Reminder,
   type Settings,
 } from '../src/domain/reminders';
@@ -404,6 +407,108 @@ describe('display time conversion and sorting logic', () => {
     ];
     const sorted = [...items].sort((a, b) => parseDisplayTimeToMinutes(a.time) - parseDisplayTimeToMinutes(b.time));
     expect(sorted.map((i) => i.id)).toEqual(['2', '3', '4', '1']);
+  });
+});
+
+describe('hydration & companion mood domain logic', () => {
+  describe('calculateHydrationStatus', () => {
+    const baseTime = 1760850000000; // Reference timestamp
+
+    it('returns hydrated when less than 2.5 hours have elapsed', () => {
+      const drinkTime = baseTime - 1.5 * 3600 * 1000; // 1.5 hours ago
+      const status = calculateHydrationStatus(drinkTime, baseTime);
+      expect(status.hydrationLevel).toBe('hydrated');
+      expect(status.hoursSinceDrink).toBe(1.5);
+    });
+
+    it('returns thirsty when between 2.5 and 4 hours have elapsed', () => {
+      const drinkTime = baseTime - 3.0 * 3600 * 1000; // 3 hours ago
+      const status = calculateHydrationStatus(drinkTime, baseTime);
+      expect(status.hydrationLevel).toBe('thirsty');
+      expect(status.hoursSinceDrink).toBe(3.0);
+    });
+
+    it('returns dehydrated when 4 or more hours have elapsed', () => {
+      const drinkTime = baseTime - 4.5 * 3600 * 1000; // 4.5 hours ago
+      const status = calculateHydrationStatus(drinkTime, baseTime);
+      expect(status.hydrationLevel).toBe('dehydrated');
+      expect(status.hoursSinceDrink).toBe(4.5);
+    });
+
+    it('safely handles missing or zero lastDrinkTimeMs', () => {
+      const status = calculateHydrationStatus(0, baseTime);
+      expect(status.hydrationLevel).toBe('dehydrated');
+    });
+  });
+
+  describe('isWaterReminder', () => {
+    it('detects water droplet and tea emojis', () => {
+      expect(isWaterReminder('Morning drink', '💧')).toBe(true);
+      expect(isWaterReminder('Afternoon chamomile', '🍵')).toBe(true);
+      expect(isWaterReminder('Reading time', '📖')).toBe(false);
+    });
+
+    it('detects hydration keywords in title', () => {
+      expect(isWaterReminder('Drink 8oz water', '⏰')).toBe(true);
+      expect(isWaterReminder('Hydrate body', '✨')).toBe(true);
+      expect(isWaterReminder('Afternoon tea hydration break', '☀️')).toBe(true);
+      expect(isWaterReminder('Evening stretching', '🧘')).toBe(false);
+    });
+  });
+
+  describe('computeCompanionMood', () => {
+    it('returns sleep when in rest hours and not manually moved', () => {
+      const mood = computeCompanionMood({
+        isRestHours: true,
+        isManualAwake: false,
+        hydrationLevel: 'hydrated',
+      });
+      expect(mood).toBe('sleep');
+    });
+
+    it('returns idle when in rest hours but user manually moved Mochi', () => {
+      const mood = computeCompanionMood({
+        isRestHours: true,
+        isManualAwake: true,
+        hydrationLevel: 'hydrated',
+      });
+      expect(mood).toBe('idle');
+    });
+
+    it('returns sleep when severely dehydrated even outside rest hours', () => {
+      const mood = computeCompanionMood({
+        isRestHours: false,
+        hydrationLevel: 'dehydrated',
+      });
+      expect(mood).toBe('sleep');
+    });
+
+    it('returns sad when thirsty', () => {
+      const mood = computeCompanionMood({
+        isRestHours: false,
+        hydrationLevel: 'thirsty',
+      });
+      expect(mood).toBe('sad');
+    });
+
+    it('returns sad when has overdue water reminder even if hours are under threshold', () => {
+      const mood = computeCompanionMood({
+        isRestHours: false,
+        hydrationLevel: 'hydrated',
+        hasOverdueWaterReminder: true,
+      });
+      expect(mood).toBe('sad');
+    });
+
+    it('returns idle when fully hydrated and awake during daytime', () => {
+      const mood = computeCompanionMood({
+        isRestHours: false,
+        isManualAwake: false,
+        hydrationLevel: 'hydrated',
+        hasOverdueWaterReminder: false,
+      });
+      expect(mood).toBe('idle');
+    });
   });
 });
 

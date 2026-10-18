@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 
-export type MochiState = 'idle' | 'wave' | 'sleep' | 'cheer';
+export type MochiState = 'idle' | 'wave' | 'sleep' | 'cheer' | 'sad';
 
 interface MochiAvatarProps {
   state?: MochiState;
@@ -18,6 +18,11 @@ interface Frame {
   sh: number;
 }
 
+const SLEEP_LOOP_FRAMES: Frame[] = [
+  { sx: 432, sy: 470, sw: 81, sh: 84 }, // lying flat asleep
+  { sx: 519, sy: 470, sw: 78, sh: 84 }, // breathing softly asleep
+];
+
 const FRAMES: Record<MochiState, Frame[]> = {
   idle: [
     { sx: 2, sy: 7, sw: 81, sh: 79 },
@@ -34,15 +39,12 @@ const FRAMES: Record<MochiState, Frame[]> = {
     { sx: 175, sy: 287, sw: 80, sh: 77 },
     { sx: 260, sy: 287, sw: 81, sh: 77 },
   ],
-  sleep: [
+  sleep: SLEEP_LOOP_FRAMES,
+  sad: [
     { sx: 9, sy: 470, sw: 67, sh: 84 },
     { sx: 94, sy: 470, sw: 69, sh: 84 },
     { sx: 180, sy: 470, sw: 70, sh: 84 },
-    { sx: 265, sy: 470, sw: 72, sh: 84 },
-    { sx: 351, sy: 470, sw: 71, sh: 84 },
-    { sx: 432, sy: 470, sw: 81, sh: 84 },
-    { sx: 519, sy: 470, sw: 78, sh: 84 },
-    { sx: 610, sy: 470, sw: 69, sh: 84 },
+    { sx: 94, sy: 470, sw: 69, sh: 84 },
   ],
   cheer: [
     { sx: 2, sy: 563, sw: 81, sh: 85 },
@@ -57,8 +59,9 @@ const FRAMES: Record<MochiState, Frame[]> = {
 const DEFAULT_SPEEDS: Record<MochiState, number> = {
   idle: 170,
   wave: 150,
-  sleep: 280,
+  sleep: 800,
   cheer: 130,
+  sad: 340,
 };
 
 export function MochiAvatar({

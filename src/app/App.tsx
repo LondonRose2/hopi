@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { Plus, Settings as SettingsIcon, ArrowLeft } from 'lucide-react';
-import { MochiAvatar, type MochiState } from '../features/companion/MochiAvatar';
+import { MochiAvatar } from '../features/companion/MochiAvatar';
 import { useOverlayCompanion } from '../features/companion/useOverlayCompanion';
+import { useCompanionMood } from '../features/companion/useCompanionMood';
 import { OverlayPermissionPrompt } from '../features/companion/OverlayPermissionPrompt';
 import { ConfettiCelebration } from '../features/reminders/components/ConfettiCelebration';
 import { TodayRemindersView } from '../features/reminders/components/TodayRemindersView';
@@ -14,20 +15,15 @@ import type { Reminder } from '../features/reminders/types';
 
 export function App() {
   const [tab, setTab] = useState<'today' | 'upcoming' | 'settings'>('today');
-  const [mochiState, setMochiState] = useState<MochiState>('idle');
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [modalOpen, setModalOpen] = useState(false);
   const [activeItem, setActiveItem] = useState<Reminder | null>(null);
   const [confettiKey, setConfettiKey] = useState(0);
 
-  const triggerCheer = useCallback(() => {
-    setConfettiKey((k) => k + 1);
-    setMochiState('cheer');
-    setTimeout(() => setMochiState('idle'), 2400);
-  }, []);
-
+  const triggerCheer = useCallback(() => setConfettiKey((k) => k + 1), []);
   const { reminders, handleToggle, handleSave, handleDelete } = useReminders(triggerCheer);
   const overlay = useOverlayCompanion({ enabled: settings.floatingCompanion });
+  const companion = useCompanionMood(reminders, triggerCheer);
 
   const todayReminders = reminders.filter((r) => r.date <= '2026-10-18');
   const upcomingReminders = reminders.filter((r) => r.date > '2026-10-18');
@@ -35,18 +31,15 @@ export function App() {
   return (
     <div className="min-h-screen bg-linen text-warm-900 flex flex-col items-center justify-end relative">
       <ConfettiCelebration triggerKey={confettiKey} />
-
       <div className="pt-8 pb-3 flex flex-col items-center text-center select-none z-10">
-        <MochiAvatar
-          state={mochiState}
-          size={110}
-          onClick={() => {
-            setMochiState((s) => (s === 'idle' ? 'wave' : 'idle'));
-            setTimeout(() => setMochiState('idle'), 2000);
-          }}
-        />
-        <p className="text-xs font-semibold text-warm-600 mt-1 tracking-wide">
-          {tab === 'settings' ? 'Companion Settings' : 'Mochi is here with you'}
+        <MochiAvatar state={companion.currentMood} size={110} onClick={companion.interactMochi} />
+        <p className="text-xs font-semibold text-warm-600 mt-1 tracking-wide flex items-center gap-1.5">
+          {tab === 'settings' ? 'Companion Settings' : companion.statusText}
+          {tab !== 'settings' && companion.hydrationLevel !== 'hydrated' && (
+            <button onClick={companion.recordWater} className="text-[11px] font-bold text-sky-700 bg-sky-100 px-2 py-0.5 rounded-full hover:bg-sky-200">
+              💧 Drink
+            </button>
+          )}
         </p>
       </div>
 
@@ -56,7 +49,7 @@ export function App() {
             {tab === 'settings' ? (
               <button onClick={() => setTab('today')} className="p-2 rounded-full hover:bg-warm-100 text-warm-600" aria-label="Back"><ArrowLeft className="w-5 h-5" /></button>
             ) : (
-              <button onClick={() => { setActiveItem(null); setModalOpen(true); }} className="p-2 rounded-full bg-warm-100 hover:bg-warm-200 text-warm-700" aria-label="Add Item" title="Add Item"><Plus className="w-4 h-4 stroke-[2.5]" /></button>
+              <button onClick={() => { setActiveItem(null); setModalOpen(true); }} className="p-2 rounded-full bg-warm-100 hover:bg-warm-200 text-warm-700" aria-label="Add Item"><Plus className="w-4 h-4 stroke-[2.5]" /></button>
             )}
           </div>
 

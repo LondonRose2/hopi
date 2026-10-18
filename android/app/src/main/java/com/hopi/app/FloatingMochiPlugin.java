@@ -198,4 +198,22 @@ public class FloatingMochiPlugin extends Plugin {
         ret.put("shown", true);
         call.resolve(ret);
     }
+
+    @PluginMethod
+    public void recordWaterIntake(PluginCall call) {
+        Context context = getContext();
+        try {
+            Intent intent = new Intent(context, FloatingMochiService.class);
+            intent.setAction(FloatingMochiService.ACTION_RECORD_WATER);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent);
+            } else {
+                context.startService(intent);
+            }
+        } catch (Exception ignored) {}
+
+        JSObject ret = new JSObject();
+        ret.put("recorded", true);
+        call.resolve(ret);
+    }
 }

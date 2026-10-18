@@ -9,6 +9,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.ServiceInfo;
 import android.graphics.PixelFormat;
 import android.os.Build;
@@ -25,10 +26,14 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.core.app.NotificationCompat;
+import java.util.Calendar;
 
 public class FloatingMochiService extends Service {
     public static final String ACTION_SHOW_SPEECH = "com.hopi.app.ACTION_SHOW_SPEECH";
+    public static final String ACTION_RECORD_WATER = "com.hopi.app.ACTION_RECORD_WATER";
     public static final String EXTRA_SPEECH_TEXT = "extra_speech_text";
+    private static final String PREFS_NAME = "hopi_companion_prefs";
+    private static final String PREF_LAST_WATER = "last_water_time";
     private static final String CHANNEL_ID = "hopi_companion_channel";
     private static final int NOTIFICATION_ID = 1001;
 
@@ -38,11 +43,12 @@ public class FloatingMochiService extends Service {
     private TextView speechBubble;
     private WindowManager.LayoutParams params;
 
-    private enum AnimState { IDLE, WALK, WAVE, SLEEP }
+    private enum AnimState { IDLE, WALK, WAVE, SLEEP, SAD }
     private AnimState animState = AnimState.IDLE;
     private int currentFrame = 0, encouragementIndex = 0;
     private final Handler animHandler = new Handler(Looper.getMainLooper());
-    private boolean isScreenOn = true;
+    private boolean isScreenOn = true, isManualAwake = false, isDeepSleep = false;
+    private long lastManualWakeTime = 0;
 
     private static final int[] IDLE_FRAMES = {
         R.drawable.mochi_idle_0, R.drawable.mochi_idle_1, R.drawable.mochi_idle_2,
@@ -55,17 +61,53 @@ public class FloatingMochiService extends Service {
     private static final int[] WAVE_FRAMES = {
         R.drawable.mochi_wave_0, R.drawable.mochi_wave_1, R.drawable.mochi_wave_2, R.drawable.mochi_wave_3
     };
-    private static final int[] SLEEP_FRAMES = {
-        R.drawable.mochi_sleep_0, R.drawable.mochi_sleep_1, R.drawable.mochi_sleep_2, R.drawable.mochi_sleep_3,
-        R.drawable.mochi_sleep_4, R.drawable.mochi_sleep_5, R.drawable.mochi_sleep_6, R.drawable.mochi_sleep_7
+    private static final int[] SAD_FRAMES = {
+        R.drawable.mochi_sleep_0, R.drawable.mochi_sleep_1, R.drawable.mochi_sleep_2, R.drawable.mochi_sleep_1
+    };
+    private static final int[] SLEEP_INTRO_FRAMES = {
+        R.drawable.mochi_sleep_0, R.drawable.mochi_sleep_1, R.drawable.mochi_sleep_2,
+        R.drawable.mochi_sleep_3, R.drawable.mochi_sleep_4
+    };
+    private static final int[] SLEEP_LOOP_FRAMES = {
+        R.drawable.mochi_sleep_5, R.drawable.mochi_sleep_6
     };
     private static final String[] ENCOURAGEMENTS = {
         "You're doing wonderfully ✨", "Remember to drink water 💧", "Take a gentle breath 🌿", "Mochi is right here 🐰"
     };
 
     private boolean isRestHours() {
-        int hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
-        return hour >= 0 && hour < 9;
+        int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        return hour >= 0 && hour < 8; // 12 AM to 8 AM
+    }
+
+    private float getHoursSinceWater() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        long lastTime = prefs.getLong(PREF_LAST_WATER, 0);
+        if (lastTime <= 0) {
+            Calendar cal = Calendar.getInstance();
+            cal.set(Calendar.HOUR_OF_DAY, 8);
+            cal.set(Calendar.MINUTE, 0);
+            cal.set(Calendar.SECOND, 0);
+            lastTime = cal.getTimeInMillis();
+            if (System.currentTimeMillis() < lastTime) lastTime -= 24 * 60 * 60 * 1000L;
+        }
+        return Math.max(0, System.currentTimeMillis() - lastTime) / (1000f * 60f * 60f);
+    }
+
+    private AnimState computeTargetState() {
+        if (animState == AnimState.WALK || animState == AnimState.WAVE) return animState;
+        if (isRestHours()) {
+            if (isManualAwake && (System.currentTimeMillis() - lastManualWakeTime < 15 * 60 * 1000L)) {
+                return AnimState.IDLE;
+            }
+            isManualAwake = false;
+            return AnimState.SLEEP;
+        }
+        isManualAwake = false;
+        float h = getHoursSinceWater();
+        if (h >= 4.0f) return AnimState.SLEEP; // Dehydrated exhaustion
+        if (h >= 2.5f) return AnimState.SAD;   // Thirsty
+        return AnimState.IDLE;
     }
 
     private final Runnable hideSpeechRunnable = () -> {
@@ -79,11 +121,30 @@ public class FloatingMochiService extends Service {
         @Override
         public void run() {
             if (mochiImage == null || !isScreenOn) return;
-            int[] frames = (animState == AnimState.WALK) ? WALK_FRAMES :
-                           (animState == AnimState.WAVE) ? WAVE_FRAMES :
-                           (animState == AnimState.SLEEP || (animState == AnimState.IDLE && isRestHours())) ? SLEEP_FRAMES : IDLE_FRAMES;
-            int delayMs = (animState == AnimState.WALK) ? 95 : (animState == AnimState.WAVE) ? 140 :
-                          (animState == AnimState.SLEEP || (animState == AnimState.IDLE && isRestHours())) ? 280 : 160;
+            AnimState target = computeTargetState();
+            if (target != AnimState.WALK && target != AnimState.WAVE && animState != target) {
+                animState = target;
+                currentFrame = 0;
+                isDeepSleep = false;
+            }
+
+            int[] frames = IDLE_FRAMES;
+            int delayMs = 160;
+
+            if (animState == AnimState.WALK) {
+                frames = WALK_FRAMES; delayMs = 95; isDeepSleep = false;
+            } else if (animState == AnimState.WAVE) {
+                frames = WAVE_FRAMES; delayMs = 140; isDeepSleep = false;
+            } else if (animState == AnimState.SAD) {
+                frames = SAD_FRAMES; delayMs = 340; isDeepSleep = false;
+            } else if (animState == AnimState.SLEEP) {
+                if (!isDeepSleep) {
+                    frames = SLEEP_INTRO_FRAMES; delayMs = 250;
+                    if (currentFrame >= frames.length - 1) { isDeepSleep = true; currentFrame = 0; }
+                } else {
+                    frames = SLEEP_LOOP_FRAMES; delayMs = 850;
+                }
+            }
 
             if (frames.length > 0) {
                 currentFrame = currentFrame % frames.length;
@@ -124,9 +185,18 @@ public class FloatingMochiService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         ensureForegroundNotification();
         if (floatingView == null) initOverlay();
-        if (intent != null && ACTION_SHOW_SPEECH.equals(intent.getAction())) {
-            String text = intent.getStringExtra(EXTRA_SPEECH_TEXT);
-            if (text != null) showSpeechBubble(text, 9000);
+        if (intent != null) {
+            if (ACTION_SHOW_SPEECH.equals(intent.getAction())) {
+                String text = intent.getStringExtra(EXTRA_SPEECH_TEXT);
+                if (text != null) showSpeechBubble(text, 9000);
+            } else if (ACTION_RECORD_WATER.equals(intent.getAction())) {
+                getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit()
+                        .putLong(PREF_LAST_WATER, System.currentTimeMillis()).apply();
+                isDeepSleep = false;
+                setAnimState(AnimState.WAVE);
+                showSpeechBubble("Ah, refreshing! Thank you for hydrating! 💧✨", 4000);
+                animHandler.postDelayed(() -> setAnimState(AnimState.IDLE), 2200);
+            }
         }
         return START_STICKY;
     }
@@ -141,8 +211,6 @@ public class FloatingMochiService extends Service {
         speechBubble.setScaleX(0.85f);
         speechBubble.setScaleY(0.85f);
         speechBubble.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(200).start();
-        setAnimState(AnimState.WAVE);
-        animHandler.postDelayed(() -> setAnimState(AnimState.IDLE), 1500);
         animHandler.postDelayed(hideSpeechRunnable, durationMs);
     }
 
@@ -196,6 +264,20 @@ public class FloatingMochiService extends Service {
         }
     }
 
+    private void showTapFeedback() {
+        float h = getHoursSinceWater();
+        if (isRestHours() && !isManualAwake) {
+            showSpeechBubble("Zzz... Mochi is resting peacefully 🌙", 3500);
+        } else if (h >= 4.0f) {
+            showSpeechBubble("Mochi has no energy... need water 💧😴", 4500);
+        } else if (h >= 2.5f) {
+            showSpeechBubble("Mochi is feeling a bit thirsty... 💧", 4000);
+        } else {
+            showSpeechBubble(ENCOURAGEMENTS[encouragementIndex % ENCOURAGEMENTS.length], 4000);
+            encouragementIndex++;
+        }
+    }
+
     private void setupTouchListener(View view) {
         final int touchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
         view.setOnTouchListener(new View.OnTouchListener() {
@@ -208,10 +290,8 @@ public class FloatingMochiService extends Service {
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        initialX = params.x;
-                        initialY = params.y;
-                        initialTouchX = event.getRawX();
-                        initialTouchY = event.getRawY();
+                        initialX = params.x; initialY = params.y;
+                        initialTouchX = event.getRawX(); initialTouchY = event.getRawY();
                         touchStartTime = System.currentTimeMillis();
                         isDragging = false;
                         return true;
@@ -221,6 +301,9 @@ public class FloatingMochiService extends Service {
                         float deltaY = event.getRawY() - initialTouchY;
                         if (!isDragging && (Math.abs(deltaX) > touchSlop || Math.abs(deltaY) > touchSlop)) {
                             isDragging = true;
+                            isManualAwake = true;
+                            lastManualWakeTime = System.currentTimeMillis();
+                            isDeepSleep = false;
                             setAnimState(AnimState.WALK);
                         }
                         if (isDragging) {
@@ -241,8 +324,7 @@ public class FloatingMochiService extends Service {
                         if (isDragging) {
                             setAnimState(AnimState.IDLE);
                         } else if (duration < 500) {
-                            showSpeechBubble(ENCOURAGEMENTS[encouragementIndex % ENCOURAGEMENTS.length], 4000);
-                            encouragementIndex++;
+                            showTapFeedback();
                             animHandler.postDelayed(() -> openHopiApp(), 500);
                         }
                         return true;
