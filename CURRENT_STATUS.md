@@ -11,11 +11,12 @@ _Last updated: 2026-10-19 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 
 ## 📍 Where we are
 - **GitHub Repository:** [`https://github.com/LondonRose2/hopi`](https://github.com/LondonRose2/hopi) (pushed & tracked on `master`).
-- **Release APK Built (v1.0.8):**
-  - **Direct Download Link:** [`https://github.com/LondonRose2/hopi/releases/download/v1.0.8/hopi.apk`](https://github.com/LondonRose2/hopi/releases/download/v1.0.8/hopi.apk)
-  - **Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.0.8`](https://github.com/LondonRose2/hopi/releases/tag/v1.0.8)
+- **Release APK Built (v1.0.9):**
+  - **Direct Download Link:** [`https://github.com/LondonRose2/hopi/releases/download/v1.0.9/hopi.apk`](https://github.com/LondonRose2/hopi/releases/download/v1.0.9/hopi.apk)
+  - **Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.0.9`](https://github.com/LondonRose2/hopi/releases/tag/v1.0.9)
   - **Local APK Path:** `release/hopi.apk` (10.33 MB).
 - **Features Included:**
+  - **Mature, Grounded Companion Tone:** Completely rewritten companion phrases replacing childlike or patronizing talk with calm, dignified adult wellness encouragement, grounding reflections, and realistic hydration prompts.
   - **Voice Reminder System (Long-Press to Record, Double-Tap to Finish):**
     - **Long-Press:** Hold down on the companion avatar for > 500ms. Triggers haptic feedback and opens the microphone (`Listening... 🎙️`).
     - **Finger Release:** When you let go, the microphone stays recording uninterrupted.
@@ -32,8 +33,7 @@ _Last updated: 2026-10-19 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
   - Zero TypeScript errors (`npm.cmd run typecheck` / `npm.cmd run build`).
   - Strict line budgets respected on all files (views <100 lines, components <200 lines, services <300 lines).
 - **Context System:** [`AGENTS.md`](file:///c:/Users/Rachel/Documents/apps/hopi/AGENTS.md) and [`CURRENT_STATUS.md`](file:///c:/Users/Rachel/Documents/apps/hopi/CURRENT_STATUS.md) fully up-to-date.
-
----
+----
 
 ## 🔨 What we're working on
 1. Verifying Mochi's persistent sleep and movement-triggered wake on Android device.

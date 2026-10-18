@@ -512,19 +512,17 @@ describe('hydration & companion mood domain logic', () => {
   });
 
   describe('PhraseSelector domain logic', () => {
-    it('returns peaceful sleeping phrase with dynamic companion name during rest hours', async () => {
+    it('returns peaceful sleeping phrase during rest hours', async () => {
       const { PhraseSelector } = await import('../src/domain/companion/phrases');
       const selector = new PhraseSelector();
-      expect(selector.getPhrase(0.5, true, 2, 'Mochi')).toBe('Zzz... Mochi is resting peacefully 🌙');
-      expect(selector.getPhrase(0.5, true, 2, 'Pippin')).toBe('Zzz... Pippin is resting peacefully 🌙');
+      expect(selector.getPhrase(0.5, true, 2, 'Mochi')).toBe('Resting quietly for the night. 🌙');
     });
 
     it('returns water reminders when thirsty (hoursSinceWater >= 2)', async () => {
       const { PhraseSelector, WATER_REMINDERS } = await import('../src/domain/companion/phrases');
       const selector = new PhraseSelector();
       const phrase = selector.getPhrase(2.5, false, 14, 'Mochi');
-      const formattedPool = WATER_REMINDERS.map((r) => r.replace(/\{name\}/g, 'Mochi'));
-      expect(formattedPool).toContain(phrase);
+      expect(WATER_REMINDERS).toContain(phrase);
     });
 
     it('returns midnight sleep reminder when screen is on after midnight', async () => {

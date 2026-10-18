@@ -55,12 +55,12 @@ export function useCompanionMood(reminders: Reminder[], onCheer?: () => void, co
     if (customPhrase) return customPhrase;
     if (currentMood === 'sleep') {
       return isRestHours && !isManualAwake
-        ? `${companionName} is sleeping peacefully 🌙`
-        : `${companionName} is sleeping from dehydration 💧😴`;
+        ? 'Resting quietly for the night 🌙'
+        : 'Low hydration. Remember to drink water 💧';
     }
-    if (currentMood === 'sad') return `${companionName} is thirsty... Remember to hydrate 💧`;
-    if (currentMood === 'cheer') return `${companionName} is energized and happy! ✨💧`;
-    if (currentMood === 'wave') return 'Hello friend! 🐰✨';
+    if (currentMood === 'sad') return 'Hydration check: good time for a glass of water 💧';
+    if (currentMood === 'cheer') return 'Hydration logged. Ready to continue 💧';
+    if (currentMood === 'wave') return 'Ready when you are. 🌿';
     return companionPhrases.getPhrase(hoursSinceDrink, isRestHours, new Date().getHours(), companionName);
   }, [customPhrase, currentMood, isRestHours, isManualAwake, hoursSinceDrink, companionName]);
 
@@ -69,17 +69,17 @@ export function useCompanionMood(reminders: Reminder[], onCheer?: () => void, co
     setLastWaterTime(now);
     try { localStorage.setItem(WATER_STORAGE_KEY, String(now)); } catch {}
     setOverrideState('cheer');
-    setCustomPhrase('Ah, refreshing! Thank you for hydrating! 💧✨');
+    setCustomPhrase('Water logged. Good habit. 💧');
     onCheer?.();
     floatingOverlayService.recordWaterIntake();
-    setTimeout(() => { setOverrideState(null); setCustomPhrase(null); }, 3500);
+    setTimeout(() => { setOverrideState(null); setCustomPhrase(null); }, 3000);
   }, [onCheer]);
 
   const interactMochi = useCallback(() => {
     if (currentMood === 'sleep') {
       setIsManualAwake(true);
       setOverrideState('wave');
-      setCustomPhrase(`${companionName} woke up to greet you! 🐰✨`);
+      setCustomPhrase('Active. Ready to assist. 🌿');
       setTimeout(() => { setOverrideState(null); setCustomPhrase(null); }, 2500);
       // Auto-return to sleep after ~1 minute of inactivity during rest hours
       setTimeout(() => setIsManualAwake(false), 60000);
