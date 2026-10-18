@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Trash2, Clock, Calendar, CheckSquare, RefreshCw } from 'lucide-react';
 import type { Reminder, RecurringType, ItemType } from '../types';
-import { EMOJI_OPTIONS, to24Hour, to12Hour } from '../types';
+import { EMOJI_OPTIONS, to24Hour, to12Hour, getTodayDateString } from '../types';
 
 interface ReminderEditModalProps {
   isOpen: boolean;
@@ -21,7 +21,7 @@ export function ReminderEditModal({
   const [title, setTitle] = useState('');
   const [emoji, setEmoji] = useState('💧');
   const [time, setTime] = useState('09:00 AM');
-  const [date, setDate] = useState('2026-10-18');
+  const [date, setDate] = useState(getTodayDateString());
   const [itemType, setItemType] = useState<ItemType>('task');
   const [recurring, setRecurring] = useState<RecurringType>('none');
   const timeInputRef = useRef<HTMLInputElement>(null);
@@ -39,7 +39,7 @@ export function ReminderEditModal({
       setTitle('');
       setEmoji('💧');
       setTime('09:00 AM');
-      setDate('2026-10-18');
+      setDate(getTodayDateString());
       setItemType('task');
       setRecurring('none');
     }

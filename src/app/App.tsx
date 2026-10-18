@@ -11,7 +11,7 @@ import { ReminderEditModal } from '../features/reminders/components/ReminderEdit
 import { SettingsView } from '../features/settings/components/SettingsView';
 import { useReminders } from '../features/reminders/useReminders';
 import { DEFAULT_SETTINGS, type AppSettings } from '../features/settings/types';
-import type { Reminder } from '../features/reminders/types';
+import { type Reminder, getTodayDateString } from '../features/reminders/types';
 
 export function App() {
   const [tab, setTab] = useState<'today' | 'upcoming' | 'settings'>('today');
@@ -25,8 +25,9 @@ export function App() {
   const overlay = useOverlayCompanion({ enabled: settings.floatingCompanion });
   const companion = useCompanionMood(reminders, triggerCheer);
 
-  const todayReminders = reminders.filter((r) => r.date <= '2026-10-18');
-  const upcomingReminders = reminders.filter((r) => r.date > '2026-10-18');
+  const todayStr = getTodayDateString();
+  const todayReminders = reminders.filter((r) => r.date <= todayStr);
+  const upcomingReminders = reminders.filter((r) => r.date > todayStr);
 
   return (
     <div className="min-h-screen bg-linen text-warm-900 flex flex-col items-center justify-end relative">

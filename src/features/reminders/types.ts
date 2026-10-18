@@ -60,6 +60,14 @@ export function to12Hour(timeStr: string): string {
   return `${h.toString().padStart(2, '0')}:${m} ${meridiem}`;
 }
 
+export function getTodayDateString(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const day = now.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export const INITIAL_REMINDERS: Reminder[] = [
   {
     id: 'rem-1',

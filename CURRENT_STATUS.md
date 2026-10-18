@@ -11,9 +11,12 @@ _Last updated: 2026-10-19 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 
 ## 📍 Where we are
 - **GitHub Repository Created:** [`https://github.com/LondonRose2/hopi`](https://github.com/LondonRose2/hopi) (pushed & tracked on `master`).
-- **Release APK Built (v1.0.5):**
+- **Release APK Built (v1.0.6):**
   - **Local APK Path:** `release/hopi.apk` (10.32 MB).
+  - **Direct Download / Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.0.6`](https://github.com/LondonRose2/hopi/releases/tag/v1.0.6)
 - **Features Included:**
+  - **Prevented Premature Alarms & Push Notifications:** Added past-timestamp guards in both TypeScript (`nativeOverlay.ts`) and Android Java (`FloatingMochiPlugin.java`). Alarms with timestamps in the past or within 2 seconds are safely ignored by `AlarmManager.setExactAndAllowWhileIdle()` instead of triggering instantly.
+  - **Dynamic Today Date Handling:** Replaced hardcoded `'2026-10-18'` dates in `ReminderEditModal.tsx` and `App.tsx` with `getTodayDateString()`. When adding new reminders at night or early morning, tasks default to the current calendar date rather than yesterday, ensuring alarms schedule for future times properly.
   - **Fixed Non-Repeating Sleep Loop:** Mochi transitions once into sleep (frames 0 to 5) and remains peacefully sleeping in a gentle breathing cycle between frames 5 & 6 (850ms interval). Frame 7 (sudden pop-up) is completely excluded from the sleep loop.
   - **Movement & Morning Wake Behavior:** Mochi stays sleeping all night until moved (dragged across screen) or morning arrives (post-rest hours after 8:00 AM). Moving Mochi wakes it up into walking/idle for a responsive session (15-minute wakefulness window before resting again if undisturbed).
   - **Dynamic Hydration Calculation Across the Day:** Pure domain calculation (`calculateHydrationStatus`) tracking time elapsed since last water intake:

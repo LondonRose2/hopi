@@ -91,6 +91,10 @@ export const floatingOverlayService = {
     if (!Capacitor.isNativePlatform()) return false;
     try {
       const triggerAtMillis = parseReminderTimestamp(reminder.date, reminder.time, reminder.recurring);
+      // Never schedule alarms for times that have already passed
+      if (triggerAtMillis <= Date.now() + 2000) {
+        return false;
+      }
       const res = await NativeFloatingMochi.scheduleReminder({
         id: reminder.id,
         title: reminder.title,

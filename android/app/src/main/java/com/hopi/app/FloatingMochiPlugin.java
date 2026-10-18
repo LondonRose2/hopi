@@ -128,6 +128,15 @@ public class FloatingMochiPlugin extends Plugin {
             return;
         }
 
+        // Never schedule alarms for times in the past
+        if (triggerAtMillis <= System.currentTimeMillis() + 2000L) {
+            JSObject ret = new JSObject();
+            ret.put("scheduled", false);
+            ret.put("reason", "Past timestamp skipped");
+            call.resolve(ret);
+            return;
+        }
+
         Context context = getContext();
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(context, ReminderAlarmReceiver.class);
