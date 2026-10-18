@@ -10,11 +10,11 @@ _Last updated: 2026-10-19 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 ---
 
 ## 📍 Where we are
-- **GitHub Repository Created:** [`https://github.com/LondonRose2/hopi`](https://github.com/LondonRose2/hopi) (pushed & tracked on `master`).
-- **GitHub Repository Created:** [`https://github.com/LondonRose2/hopi`](https://github.com/LondonRose2/hopi) (pushed & tracked on `master`).
+- **GitHub Repository:** [`https://github.com/LondonRose2/hopi`](https://github.com/LondonRose2/hopi) (pushed & tracked on `master`).
 - **Release APK Built (v1.0.7):**
+  - **Direct Download Link:** [`https://github.com/LondonRose2/hopi/releases/download/v1.0.7/hopi.apk`](https://github.com/LondonRose2/hopi/releases/download/v1.0.7/hopi.apk)
+  - **Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.0.7`](https://github.com/LondonRose2/hopi/releases/tag/v1.0.7)
   - **Local APK Path:** `release/hopi.apk` (10.32 MB).
-  - **Direct Download / Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.0.7`](https://github.com/LondonRose2/hopi/releases/tag/v1.0.7)
 - **Features Included:**
   - **50+ Diverse Non-Repeating Companion Phrases:** Replaced the repetitive 4-phrase cycle with a rich catalog of over 50 varied phrases in `CompanionPhrases.java` and `phrases.ts`:
     - **Varied Water Reminders (14 phrases):** Warm, caring prompts to hydrate without feeling like robotic commands.
