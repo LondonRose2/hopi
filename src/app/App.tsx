@@ -30,8 +30,9 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-linen text-warm-900 flex flex-col items-center justify-end relative">
+      <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#2D2721]/30 via-[#2D2721]/10 to-transparent pointer-events-none z-0" />
       <ConfettiCelebration triggerKey={confettiKey} />
-      <div className="pt-8 pb-3 flex flex-col items-center text-center select-none z-10">
+      <div className="pt-safe pt-8 pb-3 flex flex-col items-center text-center select-none z-10">
         <MochiAvatar state={companion.currentMood} size={110} onClick={companion.interactMochi} />
         <p className="text-xs font-semibold text-warm-600 mt-1 tracking-wide flex items-center gap-1.5">
           {tab === 'settings' ? 'Companion Settings' : companion.statusText}
@@ -43,13 +44,13 @@ export function App() {
         </p>
       </div>
 
-      <main className="w-full max-w-lg h-[75vh] bg-white rounded-t-[2.2rem] border-t border-x border-[#EAE2D5] shadow-sheet flex flex-col overflow-hidden z-20">
+      <main className="w-full max-w-lg h-[78vh] bg-white rounded-t-[2.2rem] border-t border-x border-[#EAE2D5] shadow-sheet flex flex-col overflow-hidden z-20">
         <header className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-warm-100">
           <div className="w-9">
             {tab === 'settings' ? (
               <button onClick={() => setTab('today')} className="p-2 rounded-full hover:bg-warm-100 text-warm-600" aria-label="Back"><ArrowLeft className="w-5 h-5" /></button>
             ) : (
-              <button onClick={() => { setActiveItem(null); setModalOpen(true); }} className="p-2 rounded-full bg-warm-100 hover:bg-warm-200 text-warm-700" aria-label="Add Item"><Plus className="w-4 h-4 stroke-[2.5]" /></button>
+              <button onClick={() => { setActiveItem(null); setModalOpen(true); }} className="p-2.5 rounded-full bg-warm-100 hover:bg-warm-200 text-warm-700 shadow-sm" aria-label="Add Item" title="Add Item"><Plus className="w-4 h-4 stroke-[2.5]" /></button>
             )}
           </div>
 

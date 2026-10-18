@@ -29,14 +29,16 @@
   --radius-pill: 9999px;
 }
 
-/* Subtle Linen Texture Background */
+/* Subtle Linen Texture Background with Top Status Header Gradient */
 .bg-linen {
   background-color: var(--c-bg);
   background-image:
+    linear-gradient(to bottom, rgba(45, 39, 33, 0.35) 0%, rgba(45, 39, 33, 0.12) 48px, transparent 110px),
     radial-gradient(ellipse at 50% 0%, rgba(246, 241, 232, 0.7) 0%, transparent 80%),
     linear-gradient(rgba(234, 226, 213, 0.12) 1px, transparent 1px),
     linear-gradient(90deg, rgba(234, 226, 213, 0.12) 1px, transparent 1px);
-  background-size: 100% 100%, 20px 20px, 20px 20px;
+  background-size: 100% 120px, 100% 100%, 20px 20px, 20px 20px;
+  background-repeat: no-repeat, no-repeat, repeat, repeat;
 }
 
 /* Safe Area Paddings for Mobile Notch and Navigation Bar */

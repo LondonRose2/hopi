@@ -216,12 +216,12 @@ export function ReminderEditModal({
             </div>
           )}
 
-          <div className="flex items-center gap-3 pt-2">
+          <div className="flex items-center gap-3 pt-3 pb-6 sm:pb-2">
             {initialReminder && onDelete && (
               <button
                 type="button"
                 onClick={() => { onDelete(initialReminder.id); onClose(); }}
-                className="p-2.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition-colors"
+                className="p-3 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition-colors"
                 title="Delete item"
               >
                 <Trash2 className="w-4 h-4" />
@@ -229,7 +229,7 @@ export function ReminderEditModal({
             )}
             <button
               type="submit"
-              className="flex-1 py-2.5 px-4 rounded-xl bg-terracotta hover:bg-terracotta-hover text-white text-xs font-semibold tracking-wide shadow-sm transition-all"
+              className="flex-1 py-3 px-4 rounded-xl bg-terracotta hover:bg-terracotta-hover text-white text-xs font-semibold tracking-wide shadow-md transition-all active:scale-[0.99]"
             >
               {initialReminder ? 'Save Changes' : 'Add Item'}
             </button>

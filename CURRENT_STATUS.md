@@ -21,6 +21,8 @@ _Last updated: 2026-10-19 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
     - `2.5 to 4.0 hours` (or overdue water reminder): Mildly dehydrated (`sad` animation with drooping ears and longing eyes).
     - `>= 4.0 hours`: Deep dehydration / fatigue (`sleep` animation from lack of energy).
   - **Instantaneous Drag Direction Response:** Replaced cumulative displacement delta with per-touch event velocity (`instantDeltaX = event.getRawX() - lastTouchX`). When reversing drag direction from left to right or right to left, Mochi flips immediately with zero lag.
+  - **Top Header Status Gradient:** Added a subtle gradient getting darker towards the top (`linear-gradient(to bottom, rgba(45, 39, 33, 0.35) ...)` in `.bg-linen` plus a matching top overlay in `App.tsx`), ensuring the phone header's date, time, battery, and notification indicators are clearly visible and legible.
+  - **Elevated "Add Item" Button:** Moved the Add Item button higher in `ReminderEditModal` with safe-area padding (`pb-6 sm:pb-2` and `py-3`), and elevated the main sheet header (`h-[78vh]`) so the Add Item action is comfortably within thumb reach above the phone's bottom navigation bar.
   - **Contextual Speech Encouragements:** Tapping Mochi speaks contextually depending on whether it's resting at night, feeling thirsty, or exhausted.
 - **Test & Type Health:**
   - 54 passing tests in Vitest (`npm.cmd test -- --run`).
