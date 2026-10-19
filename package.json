@@ -10,7 +10,8 @@
     "test": "vitest run tests/domain.test.ts",
     "typecheck": "tsc --noEmit",
     "sync:android": "npx cap sync android",
-    "build:apk": "tsc && vite build && npx cap sync android && cmd /c \"cd android && gradlew.bat assembleDebug\""
+    "build:apk": "tsc && vite build && npx cap sync android && cmd /c \"cd android && gradlew.bat assembleDebug\"",
+    "serve:apk": "node scripts/serve-apk.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",

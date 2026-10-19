@@ -12,9 +12,10 @@ _Last updated: 2026-10-19 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 ## 📍 Where we are
 - **GitHub Repository:** [`https://github.com/LondonRose2/hopi`](https://github.com/LondonRose2/hopi) (pushed & tracked on `master`).
 - **Release APK Built (v1.1.2):**
-  - **Direct Download Link:** [`https://github.com/LondonRose2/hopi/releases/download/v1.1.2/hopi.apk`](https://github.com/LondonRose2/hopi/releases/download/v1.1.2/hopi.apk)
-  - **Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.1.2`](https://github.com/LondonRose2/hopi/releases/tag/v1.1.2)
-  - **Local APK Path:** `release/hopi.apk` (12.01 MB, built today).
+  - **Local Wi-Fi Browser Link (Mobile Chrome):** [`http://192.168.0.103:8088/`](http://192.168.0.103:8088/) or direct download at [`http://192.168.0.103:8088/hopi.apk`](http://192.168.0.103:8088/hopi.apk)
+  - **GitHub Direct Download Link:** [`https://github.com/LondonRose2/hopi/releases/download/v1.1.2/hopi.apk`](https://github.com/LondonRose2/hopi/releases/download/v1.1.2/hopi.apk)
+  - **GitHub Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.1.2`](https://github.com/LondonRose2/hopi/releases/tag/v1.1.2)
+  - **Local File Path:** `release/hopi.apk` (12.01 MB, built today).
 - **Features Included:**
   - **Hydration Logging & Companion Happiness Sync:**
     - Dedicated "💧 I drank water" button in the companion card.
