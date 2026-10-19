@@ -11,11 +11,25 @@ _Last updated: 2026-10-19 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 
 ## 📍 Where we are
 - **GitHub Repository:** [`https://github.com/LondonRose2/hopi`](https://github.com/LondonRose2/hopi) (pushed & tracked on `master`).
-- **Release APK Built (v1.1.1):**
-  - **Direct Download Link:** [`https://github.com/LondonRose2/hopi/releases/download/v1.1.1/hopi.apk`](https://github.com/LondonRose2/hopi/releases/download/v1.1.1/hopi.apk)
-  - **Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.1.1`](https://github.com/LondonRose2/hopi/releases/tag/v1.1.1)
-  - **Local APK Path:** `release/hopi.apk` (11.89 MB).
+- **Release APK Built (v1.1.2):**
+  - **Direct Download Link:** [`https://github.com/LondonRose2/hopi/releases/download/v1.1.2/hopi.apk`](https://github.com/LondonRose2/hopi/releases/download/v1.1.2/hopi.apk)
+  - **Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.1.2`](https://github.com/LondonRose2/hopi/releases/tag/v1.1.2)
+  - **Local APK Path:** `release/hopi.apk` (12.01 MB, built today).
 - **Features Included:**
+  - **Hydration Logging & Companion Happiness Sync:**
+    - Dedicated "💧 I drank water" button in the companion card.
+    - Direct tap on the thirsty/sad avatar or bubble immediately logs hydration, displays wave animation, and plays joyous celebration.
+    - Two-way hydration sync between React app and Android native floating service (`FloatingMochiService`).
+  - **Custom Repeating Hourly Routines (`Every X hrs`):**
+    - Configurable interval selector from 1 to 12 hours.
+    - Canonical next-occurrence calculation in `src/domain/reminders/recurrence.ts` automatically advances due time by `intervalHours` upon check-off.
+    - Natural language voice parser supports phrases like "take vitamins every 4 hours".
+  - **Microphone Long-Press & Voice Recording Engine:**
+    - Android 11+ package visibility declared via `<queries>` with `android.speech.RecognitionService`.
+    - Proactive runtime `android.permission.RECORD_AUDIO` request handled smoothly via `FloatingMochiPlugin` and `useOverlayCompanion`.
+    - Helpful speech bubble guidance if microphone permission is not yet granted ("Mic permission needed! Tap here to open Hopi 🎙️").
+    - Tapping "tap to retry" or "Mic ready" in the speech bubble directly restarts voice listening.
+    - Clean recognizer reset and error handling for `ERROR_RECOGNIZER_BUSY`, `ERROR_INSUFFICIENT_PERMISSIONS`, and network timeouts.
   - **Organic, Non-Repetitive Idle & Blinking Engine:**
     - Replaced rapid 900ms linear frame cycling with natural resting posture (2.4s–5.2s peaceful still rest).
     - Varied realistic actions: single blinks (70ms/130ms), occasional double-blinks (20%), curious head tilts (10%), and sweet nose/paw grooming (10%).
@@ -24,20 +38,16 @@ _Last updated: 2026-10-19 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
   - **Grounded Hop & Walk Pacing:**
     - Calibrated dragging motion to 140ms per frame for a graceful, bouncy hop rather than frantic cycling.
   - **Three Selectable Companions:** Mochi (plush bunny), Pip (baby penguin), and Snowdrop (lop rabbit).
-    - 🐰 **Mochi**: The classic plush cream bunny with gentle stitching and floppy ears.
-    - 🐧 **Pip**: The realistic fluffy baby penguin with soft downy feathers.
-    - 🐇 **Snowdrop**: The realistic fluffy white bunny with gentle lop ears.
     - Full animation state support across all 3 characters: `idle` (blinking), `walk` (hop/waddle), `wave`, `cheer` (jump), `sleep` (organic breathing loop), and `sad` (drooping/thirsty).
     - Native home screen floating companion overlay (`FloatingMochiService`) dynamically switches drawables and name immediately upon selection.
   - **Mature, Grounded Companion Tone:** Dignified adult wellness encouragement, grounding reflections, and realistic hydration prompts.
   - **Voice Reminder System (Long-Press to Record, Double-Tap to Finish):** Offline intent classification for Tasks vs Routines, conversational clarification loop via `TextToSpeech`.
   - **Dynamic Avatar Naming:** All phrases, service notifications, and UI status strings use dynamic avatar name formatting (`getCompanionName()` / `%s` / `{name}`).
-  - **Organic, Non-Robotic Sleep Animation:** Peaceful still slumber for 2.8s–5.2s with soft breathing for ~0.7s at natural, randomized intervals.
   - **Hourly Midnight Sleep Reminders:** Proactive gentle rest reminders between 12:00 AM and 8:00 AM when screen is active.
 - **Test & Type Health:**
-  - 65 passing tests in Vitest (`npm.cmd test`).
-  - Zero TypeScript errors (`npm.cmd run typecheck` & `npm.cmd run build`).
-  - Strict line budgets respected on all files (views <100 lines, components <200 lines, services <300 lines).
+  - 72 passing tests in Vitest (`npm.cmd test`).
+  - Zero TypeScript errors (`npm.cmd run build`).
+  - Strict line budgets respected on all files (views <= 100 lines, components <= 200/300 lines, services <= 300 lines).
 - **Context System:** [`AGENTS.md`](file:///c:/Users/Rachel/Documents/apps/hopi/AGENTS.md) and [`CURRENT_STATUS.md`](file:///c:/Users/Rachel/Documents/apps/hopi/CURRENT_STATUS.md) fully up-to-date.
 
 ---
@@ -68,12 +78,16 @@ _Last updated: 2026-10-19 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 ---
 
 ## ➡️ Next step (proposed — Rachel to confirm)
-1. Launch Hopi, open Settings (⚙️), and switch between Mochi, Pip, and Snowdrop to observe both in-app and floating overlay animations.
+1. In Hopi, tap "+" to create or edit a Daily Routine, choose "Every X hrs", and select your desired hours interval (e.g. 2h, 3h, or custom).
+2. Check off the routine upon completing it and observe the next occurrence automatically scheduling for X hours later with full celebration and alarm setup.
+3. Test voice command on floating companion: "Remind me every 2 hours to drink water" and verify automatic interval extraction.
 
 ---
 
 ## 🗒️ History & Learnings
 | Date | What happened & What did we learn |
 |---|---|
+| 2026-10-19 | Added customizable hourly repeating routines: (1) Added `recurring: 'hourly'` and `repeatIntervalHours` (1-24h) to Reminder contracts; (2) Added interactive Cadence picker in `ReminderEditModal` with quick pills (1h, 2h, 3h, 4h, 6h, 8h) and custom number input; (3) Added `calculateNextHourlyOccurrence` pure domain recurrence engine in `recurrence.ts`; (4) Auto-schedules next occurrence upon completion with speech feedback and AlarmManager sync; (5) Added voice recognition ("Remind me every X hours to...") in TypeScript & Android `VoiceParser.java`. 72 unit tests passing. Built APK successfully. |
+| 2026-10-19 | Connected companion avatar with interactive water intake inputs: (1) Added prominent `💧 I drank water` button and direct avatar tap-to-water hydration in-app; (2) Connected `useReminders` checklist completion directly to `useCompanionMood` state; (3) Added `isWaterIntakePhrase` intent recognition for voice ("I drank water") on floating overlay; (4) Enabled speech bubble single-tap water logging on overlay; (5) Synced native water timestamp across Android & web on resume. 66 unit tests passing. Built APK successfully. |
 | 2026-10-19 | Added Pip (baby penguin) and Snowdrop (white lop bunny) companion avatars. Created dynamic frame definitions, generated 76 Android drawables, wired Settings selection, and added `ACTION_UPDATE_AVATAR` for instant overlay character switching. 65 unit tests passing. Built v1.1.0 APK. |
 | 2026-10-19 | Fixed 3-second repeating sleep loop: Mochi now stays sleeping in a calm loop (frames 5 & 6) and only wakes up when moved or when morning arrives. Added pure domain hydration calculation and sad/sleepy states based on time without water. Built v1.0.5 APK (10.32 MB). 54 unit tests passing. |

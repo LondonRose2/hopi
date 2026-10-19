@@ -1,6 +1,6 @@
 export type ReminderCategory = 'water' | 'walk' | 'rest' | 'scripture' | 'custom';
 
-export type RecurringType = 'daily' | 'weekdays' | 'once';
+export type RecurringType = 'daily' | 'weekdays' | 'once' | 'weekly' | 'hourly';
 
 export type AvatarType = 'rabbit' | 'penguin' | 'mochi' | 'pip' | 'snowdrop';
 
@@ -14,6 +14,7 @@ export interface Reminder {
   completedAt?: string;
   category: ReminderCategory;
   recurring: RecurringType;
+  repeatIntervalHours?: number;
 }
 
 export interface Settings {

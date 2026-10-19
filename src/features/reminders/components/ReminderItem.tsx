@@ -40,7 +40,9 @@ export function ReminderItem({ reminder, onToggle, onSelect }: ReminderItemProps
             </span>
             {reminder.recurring && reminder.recurring !== 'none' && (
               <span className="text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded-full bg-warm-100 text-warm-600 border border-warm-200">
-                {reminder.recurring}
+                {reminder.recurring === 'hourly'
+                  ? `Every ${reminder.repeatIntervalHours || 2}h`
+                  : reminder.recurring}
               </span>
             )}
           </div>

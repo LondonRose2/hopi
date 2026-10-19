@@ -16,6 +16,8 @@ export const recurringTypeSchema = z.enum([
   'daily',
   'weekdays',
   'once',
+  'weekly',
+  'hourly',
 ]);
 
 export const avatarTypeSchema = z.enum([
@@ -36,6 +38,7 @@ export const reminderSchema = z.object({
   completedAt: z.string().optional(),
   category: reminderCategorySchema,
   recurring: recurringTypeSchema,
+  repeatIntervalHours: z.number().int().min(1).max(24).optional(),
 });
 
 export const settingsSchema = z.object({

@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { INITIAL_REMINDERS, type Reminder } from './types';
+import { isWaterReminder } from '../../domain/reminders/hydration';
+import { calculateNextHourlyOccurrence } from '../../domain/reminders/recurrence';
 import { floatingOverlayService } from '../../services/nativeOverlay';
 
 const STORAGE_KEY = 'hopi_reminders';
 
-export function useReminders(onCheer?: () => void) {
+export function useReminders(onCheer?: () => void, onWaterLogged?: () => void) {
   const [reminders, setReminders] = useState<Reminder[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -52,19 +54,49 @@ export function useReminders(onCheer?: () => void) {
       const target = updated.find((r) => r.id === id);
       if (target?.completed) {
         onCheer?.();
-        if (target.emoji === '💧' || target.emoji === '🍵' || target.title.toLowerCase().includes('water')) {
-          localStorage.setItem('hopi_last_water_time', String(Date.now()));
-          floatingOverlayService.recordWaterIntake();
-        } else {
-          floatingOverlayService.showSpeechBubble(`Great job! ✨ ${target.title}`);
+        if (isWaterReminder(target.title, target.emoji)) {
+          if (onWaterLogged) {
+            onWaterLogged();
+          } else {
+            try { localStorage.setItem('hopi_last_water_time', String(Date.now())); } catch {}
+            floatingOverlayService.recordWaterIntake();
+          }
         }
         floatingOverlayService.cancelReminder(id);
+
+        if (target.recurring === 'hourly') {
+          const hasPendingSame = updated.some(
+            (r) => !r.completed && r.title.toLowerCase() === target.title.toLowerCase() && r.recurring === 'hourly'
+          );
+          if (!hasPendingSame) {
+            const interval = target.repeatIntervalHours || 2;
+            const next = calculateNextHourlyOccurrence(target.time, target.date, interval);
+            const nextItem: Reminder = {
+              id: `rem-h-${Date.now()}-${crypto.randomUUID().slice(0, 6)}`,
+              title: target.title,
+              emoji: target.emoji,
+              time: next.time,
+              date: next.date,
+              completed: false,
+              recurring: 'hourly',
+              repeatIntervalHours: interval,
+              itemType: 'routine',
+            };
+            const withNext = [nextItem, ...updated];
+            persist(withNext);
+            floatingOverlayService.scheduleReminder(nextItem);
+            floatingOverlayService.showSpeechBubble(`Completed! Next at ${next.time} ⏰`);
+            return withNext;
+          }
+        } else if (!isWaterReminder(target.title, target.emoji)) {
+          floatingOverlayService.showSpeechBubble(`Great job! ✨ ${target.title}`);
+        }
       } else if (target && !target.completed) {
         floatingOverlayService.scheduleReminder(target);
       }
       return updated;
     });
-  }, [persist, onCheer]);
+  }, [persist, onCheer, onWaterLogged]);
 
   const handleSave = useCallback((item: Reminder) => {
     setReminders((prev) => {

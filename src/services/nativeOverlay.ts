@@ -4,12 +4,16 @@ interface FloatingMochiPlugin {
   isOverlayPermissionGranted(): Promise<{ granted: boolean }>;
   requestOverlayPermission(): Promise<{ requested: boolean; alreadyGranted?: boolean }>;
   requestNotificationPermission(): Promise<{ granted: boolean }>;
+  isAudioPermissionGranted(): Promise<{ granted: boolean }>;
+  requestAudioPermission(): Promise<{ granted: boolean }>;
+  requestAppPermissions(): Promise<{ requested: boolean; audioGranted?: boolean }>;
   startOverlay(): Promise<{ success: boolean; reason?: string; error?: string }>;
   stopOverlay(): Promise<{ success: boolean; error?: string }>;
   scheduleReminder(options: { id: string; title: string; emoji: string; triggerAtMillis: number }): Promise<{ scheduled: boolean }>;
   cancelReminder(options: { id: string }): Promise<{ cancelled: boolean }>;
   showSpeechBubble(options: { text: string }): Promise<{ shown: boolean }>;
   recordWaterIntake(): Promise<{ recorded: boolean }>;
+  getLastWaterTime(): Promise<{ lastWaterTime: number }>;
 }
 
 const NativeFloatingMochi = registerPlugin<FloatingMochiPlugin>('FloatingMochi');
@@ -69,6 +73,36 @@ export const floatingOverlayService = {
       return res?.granted ?? true;
     } catch {
       return true;
+    }
+  },
+
+  async isAudioPermissionGranted(): Promise<boolean> {
+    if (!Capacitor.isNativePlatform()) return true;
+    try {
+      const res = await NativeFloatingMochi.isAudioPermissionGranted();
+      return res?.granted ?? false;
+    } catch {
+      return false;
+    }
+  },
+
+  async requestAudioPermission(): Promise<boolean> {
+    if (!Capacitor.isNativePlatform()) return true;
+    try {
+      const res = await NativeFloatingMochi.requestAudioPermission();
+      return res?.granted ?? false;
+    } catch {
+      return false;
+    }
+  },
+
+  async requestAppPermissions(): Promise<boolean> {
+    if (!Capacitor.isNativePlatform()) return true;
+    try {
+      const res = await NativeFloatingMochi.requestAppPermissions();
+      return res?.requested ?? false;
+    } catch {
+      return false;
     }
   },
 
@@ -134,6 +168,16 @@ export const floatingOverlayService = {
       return res?.recorded ?? false;
     } catch {
       return false;
+    }
+  },
+
+  async getLastWaterTime(): Promise<number> {
+    if (!Capacitor.isNativePlatform()) return 0;
+    try {
+      const res = await NativeFloatingMochi.getLastWaterTime();
+      return res?.lastWaterTime ?? 0;
+    } catch {
+      return 0;
     }
   },
 

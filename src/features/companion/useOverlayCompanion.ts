@@ -17,13 +17,17 @@ export function useOverlayCompanion({ enabled }: UseOverlayCompanionOptions) {
 
     if (granted && enabled) {
       await floatingOverlayService.setEnabled(true);
+      await floatingOverlayService.requestAppPermissions();
     }
   }, [enabled]);
 
   // Initial check & auto-start on mount
   useEffect(() => {
     checkPermissionAndSync();
-  }, [checkPermissionAndSync]);
+    if (floatingOverlayService.isNativePlatform() && enabled) {
+      floatingOverlayService.requestAppPermissions();
+    }
+  }, [checkPermissionAndSync, enabled]);
 
   // Re-check when user navigates back to Hopi from Android Settings
   useEffect(() => {
@@ -52,6 +56,7 @@ export function useOverlayCompanion({ enabled }: UseOverlayCompanionOptions) {
   }, [enabled, permissionGranted]);
 
   const requestPermission = useCallback(async () => {
+    await floatingOverlayService.requestAppPermissions();
     await floatingOverlayService.requestPermission();
   }, []);
 

@@ -10,6 +10,7 @@ export interface ParsedVoiceReminder {
   time: string | null;      // e.g. "08:00 PM"
   date: string | null;      // e.g. "2026-10-19"
   recurring: RecurringType;
+  repeatIntervalHours?: number;
   isComplete: boolean;
   missingField?: 'time' | 'title' | null;
   clarificationPrompt?: string | null;
@@ -21,8 +22,14 @@ const ROUTINE_KEYWORDS = [
   'every monday', 'every tuesday', 'every wednesday', 'every thursday', 'every friday', 'every saturday', 'every sunday'
 ];
 
-export function classifyItemType(transcript: string): { itemType: ItemType; recurring: RecurringType } {
+export function classifyItemType(transcript: string): { itemType: ItemType; recurring: RecurringType; repeatIntervalHours?: number } {
   const lower = transcript.toLowerCase();
+  const hourlyMatch = lower.match(/\bevery\s+(\d+)?\s*(?:hour|hours|hr|hrs)\b/);
+  if (hourlyMatch) {
+    const hours = hourlyMatch[1] ? parseInt(hourlyMatch[1], 10) : 1;
+    return { itemType: 'routine', recurring: 'hourly', repeatIntervalHours: hours };
+  }
+
   const isRoutine = ROUTINE_KEYWORDS.some((kw) => lower.includes(kw));
 
   if (!isRoutine) {
@@ -36,6 +43,21 @@ export function classifyItemType(transcript: string): { itemType: ItemType; recu
     return { itemType: 'routine', recurring: 'weekly' };
   }
   return { itemType: 'routine', recurring: 'daily' };
+}
+
+export function isWaterIntakePhrase(transcript: string): boolean {
+  if (!transcript) return false;
+  const lower = transcript.toLowerCase().trim();
+  return (
+    /\b(drank|drunk|drink|had|finished|logged)\b.*\b(water|hydration|glass of water|bottle)\b/i.test(lower) ||
+    /\b(water|hydration)\b.*\b(done|checked|finished|logged)\b/i.test(lower) ||
+    lower === 'i drank water' ||
+    lower === 'drank water' ||
+    lower === 'had water' ||
+    lower === 'water intake' ||
+    lower === 'log water' ||
+    lower === 'drink water'
+  );
 }
 
 export function inferEmoji(title: string): string {
@@ -137,6 +159,7 @@ export function cleanTitle(transcript: string): string {
   let cleaned = transcript
     .replace(/^(?:remind me to|remind me|set a reminder to|set a reminder for|don't forget to|schedule a routine to|add a task to|create a task to|add routine to|remember to)\s+/i, '')
     .replace(/\b(?:every month|every day|every week|every morning|every evening|daily|weekly|weekdays)\b/gi, '')
+    .replace(/\b(?:every \d+\s*(?:hours|hour|hrs|hr)|every hour)\b/gi, '')
     .replace(/\b(?:on the (?:first|second|third|fourth|last)|rotary)\b/gi, '')
     .replace(/\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/gi, '')
     .replace(/\b(?:tomorrow|today|tonight|next week|at \d{1,2}(?::\d{2})?\s*(?:am|pm|o'clock)?)\b/gi, '')
@@ -153,11 +176,18 @@ export function cleanTitle(transcript: string): string {
 
 export function parseVoiceInput(transcript: string, now: Date = new Date()): ParsedVoiceReminder {
   const trimmed = transcript.trim();
-  const { itemType, recurring } = classifyItemType(trimmed);
-  const time = parseVoiceTime(trimmed);
+  const { itemType, recurring, repeatIntervalHours } = classifyItemType(trimmed);
+  let time = parseVoiceTime(trimmed);
   const date = parseVoiceDate(trimmed, now);
   const title = cleanTitle(trimmed);
   const emoji = inferEmoji(title);
+
+  if (recurring === 'hourly' && !time) {
+    const nextH = (now.getHours() + 1) % 24;
+    const meridiem = nextH >= 12 ? 'PM' : 'AM';
+    const displayH = nextH % 12 || 12;
+    time = `${displayH.toString().padStart(2, '0')}:00 ${meridiem}`;
+  }
 
   const isMissingTime = !time;
   const isMissingTitle = !title || title === 'Gentle Reminder';
@@ -181,6 +211,7 @@ export function parseVoiceInput(transcript: string, now: Date = new Date()): Par
     time,
     date,
     recurring,
+    repeatIntervalHours,
     isComplete: !isMissingTime && !isMissingTitle,
     missingField,
     clarificationPrompt,

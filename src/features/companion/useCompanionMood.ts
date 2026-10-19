@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import type { MochiState } from './MochiAvatar';
 import { calculateHydrationStatus, isWaterReminder } from '../../domain/reminders/hydration';
 import { floatingOverlayService } from '../../services/nativeOverlay';
@@ -20,6 +20,18 @@ export function useCompanionMood(reminders: Reminder[], onCheer?: () => void, co
     cal.setHours(8, 0, 0, 0);
     return cal.getTime() <= Date.now() ? cal.getTime() : cal.getTime() - 86400000;
   });
+
+  useEffect(() => {
+    const syncNative = async () => {
+      const nativeTime = await floatingOverlayService.getLastWaterTime();
+      if (nativeTime > 0) {
+        setLastWaterTime((prev) => (nativeTime > prev ? nativeTime : prev));
+      }
+    };
+    syncNative();
+    window.addEventListener('focus', syncNative);
+    return () => window.removeEventListener('focus', syncNative);
+  }, []);
 
   const isRestHours = useMemo(() => new Date().getHours() < 8, []);
 
@@ -56,10 +68,10 @@ export function useCompanionMood(reminders: Reminder[], onCheer?: () => void, co
     if (currentMood === 'sleep') {
       return isRestHours && !isManualAwake
         ? 'Resting quietly for the night 🌙'
-        : 'Low hydration. Remember to drink water 💧';
+        : 'Tired from low hydration. Tap 💧 to water!';
     }
-    if (currentMood === 'sad') return 'Hydration check: good time for a glass of water 💧';
-    if (currentMood === 'cheer') return 'Hydration logged. Ready to continue 💧';
+    if (currentMood === 'sad') return 'Thirsty & drooping. Tap 💧 to water!';
+    if (currentMood === 'cheer') return 'Water logged! Happy and hydrated 💧';
     if (currentMood === 'wave') return 'Ready when you are. 🌿';
     return companionPhrases.getPhrase(hoursSinceDrink, isRestHours, new Date().getHours(), companionName);
   }, [customPhrase, currentMood, isRestHours, isManualAwake, hoursSinceDrink, companionName]);
@@ -69,31 +81,30 @@ export function useCompanionMood(reminders: Reminder[], onCheer?: () => void, co
     setLastWaterTime(now);
     try { localStorage.setItem(WATER_STORAGE_KEY, String(now)); } catch {}
     setOverrideState('cheer');
-    setCustomPhrase('Water logged. Good habit. 💧');
+    setCustomPhrase('Water logged! Thank you for hydrating 💧');
     onCheer?.();
     floatingOverlayService.recordWaterIntake();
     setTimeout(() => { setOverrideState(null); setCustomPhrase(null); }, 3000);
   }, [onCheer]);
 
   const interactMochi = useCallback(() => {
+    if (hydrationLevel !== 'hydrated' || hasOverdueWater) {
+      recordWater();
+      return;
+    }
     if (currentMood === 'sleep') {
       setIsManualAwake(true);
       setOverrideState('wave');
       setCustomPhrase('Active. Ready to assist. 🌿');
       setTimeout(() => { setOverrideState(null); setCustomPhrase(null); }, 2500);
-      // Auto-return to sleep after ~1 minute of inactivity during rest hours
       setTimeout(() => setIsManualAwake(false), 60000);
-      return;
-    }
-    if (currentMood === 'sad' || hydrationLevel !== 'hydrated') {
-      recordWater();
       return;
     }
     setOverrideState('wave');
     const phrase = companionPhrases.getPhrase(hoursSinceDrink, isRestHours, new Date().getHours(), companionName);
     setCustomPhrase(phrase);
     setTimeout(() => { setOverrideState(null); setCustomPhrase(null); }, 3500);
-  }, [currentMood, hydrationLevel, recordWater, hoursSinceDrink, isRestHours, companionName]);
+  }, [currentMood, hydrationLevel, hasOverdueWater, recordWater, hoursSinceDrink, isRestHours, companionName]);
 
   return { currentMood, statusText, hydrationLevel, recordWater, interactMochi };
 }

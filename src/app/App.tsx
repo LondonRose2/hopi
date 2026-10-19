@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Plus, Settings as SettingsIcon, ArrowLeft } from 'lucide-react';
 import { MochiAvatar } from '../features/companion/MochiAvatar';
 import { useOverlayCompanion } from '../features/companion/useOverlayCompanion';
@@ -19,13 +19,14 @@ export function App() {
   const [modalOpen, setModalOpen] = useState(false);
   const [activeItem, setActiveItem] = useState<Reminder | null>(null);
   const [confettiKey, setConfettiKey] = useState(0);
-
   const companionName = getCompanionName(settings.avatarChoice);
   const triggerCheer = useCallback(() => setConfettiKey((k) => k + 1), []);
-  const { reminders, handleToggle, handleSave, handleDelete } = useReminders(triggerCheer);
+  const onWaterLoggedRef = useRef<() => void>(() => {});
+  const handleWaterLogged = useCallback(() => onWaterLoggedRef.current(), []);
+  const { reminders, handleToggle, handleSave, handleDelete } = useReminders(triggerCheer, handleWaterLogged);
   const overlay = useOverlayCompanion({ enabled: settings.floatingCompanion });
   const companion = useCompanionMood(reminders, triggerCheer, companionName);
-
+  onWaterLoggedRef.current = companion.recordWater;
   const todayStr = getTodayDateString();
   const todayReminders = reminders.filter((r) => r.date <= todayStr);
   const upcomingReminders = reminders.filter((r) => r.date > todayStr);
@@ -42,14 +43,22 @@ export function App() {
           onClick={companion.interactMochi}
           title={companionName}
         />
-        <p className="text-xs font-semibold text-warm-600 mt-1 tracking-wide flex items-center gap-1.5">
+        <p className="text-xs font-semibold text-warm-600 mt-1 tracking-wide">
           {tab === 'settings' ? 'Companion Settings' : companion.statusText}
-          {tab !== 'settings' && companion.hydrationLevel !== 'hydrated' && (
-            <button onClick={companion.recordWater} className="text-[11px] font-bold text-sky-700 bg-sky-100 px-2 py-0.5 rounded-full hover:bg-sky-200">
-              💧 Drink
-            </button>
-          )}
         </p>
+        {tab !== 'settings' && (
+          <button
+            onClick={companion.recordWater}
+            className={`mt-1.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all shadow-sm ${
+              companion.hydrationLevel !== 'hydrated'
+                ? 'bg-sky-500 hover:bg-sky-600 text-white animate-pulse'
+                : 'bg-warm-100 hover:bg-warm-200 text-warm-700'
+            }`}
+            title="Log water intake"
+          >
+            💧 {companion.hydrationLevel !== 'hydrated' ? 'I drank water' : 'Log water'}
+          </button>
+        )}
       </div>
 
       <main className="w-full max-w-lg h-[78vh] bg-white rounded-t-[2.2rem] border-t border-x border-[#EAE2D5] shadow-sheet flex flex-col overflow-hidden z-20">

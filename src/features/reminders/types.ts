@@ -1,4 +1,4 @@
-export type RecurringType = 'none' | 'daily' | 'weekdays' | 'weekly';
+export type RecurringType = 'none' | 'daily' | 'weekdays' | 'weekly' | 'hourly';
 export type ItemType = 'task' | 'routine';
 
 export interface Reminder {
@@ -9,6 +9,7 @@ export interface Reminder {
   date: string; // ISO "YYYY-MM-DD"
   completed: boolean;
   recurring?: RecurringType;
+  repeatIntervalHours?: number; // e.g. 1 to 24 hours apart
   itemType?: ItemType;
 }
 

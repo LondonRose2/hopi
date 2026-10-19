@@ -24,6 +24,7 @@ export function ReminderEditModal({
   const [date, setDate] = useState(getTodayDateString());
   const [itemType, setItemType] = useState<ItemType>('task');
   const [recurring, setRecurring] = useState<RecurringType>('none');
+  const [repeatIntervalHours, setRepeatIntervalHours] = useState<number>(2);
   const timeInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -35,6 +36,7 @@ export function ReminderEditModal({
       const isRoutine = initialReminder.itemType === 'routine' || (initialReminder.recurring && initialReminder.recurring !== 'none');
       setItemType(isRoutine ? 'routine' : 'task');
       setRecurring(initialReminder.recurring || (isRoutine ? 'daily' : 'none'));
+      setRepeatIntervalHours(initialReminder.repeatIntervalHours || 2);
     } else {
       setTitle('');
       setEmoji('💧');
@@ -42,6 +44,7 @@ export function ReminderEditModal({
       setDate(getTodayDateString());
       setItemType('task');
       setRecurring('none');
+      setRepeatIntervalHours(2);
     }
   }, [initialReminder, isOpen]);
 
@@ -82,6 +85,7 @@ export function ReminderEditModal({
       completed: initialReminder ? initialReminder.completed : false,
       itemType,
       recurring: itemType === 'routine' ? recurring : 'none',
+      repeatIntervalHours: itemType === 'routine' && recurring === 'hourly' ? repeatIntervalHours : undefined,
     });
     onClose();
   };
@@ -197,22 +201,60 @@ export function ReminderEditModal({
           </div>
 
           {itemType === 'routine' && (
-            <div>
-              <label className="block text-xs font-medium text-warm-600 mb-1">Repeat Cadence</label>
-              <div className="grid grid-cols-3 gap-1.5">
-                {(['daily', 'weekdays', 'weekly'] as const).map((opt) => (
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-warm-600">Repeat Cadence</label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {(['daily', 'hourly', 'weekdays', 'weekly'] as const).map((opt) => (
                   <button
                     type="button"
                     key={opt}
                     onClick={() => setRecurring(opt)}
-                    className={`py-1.5 px-2 text-xs rounded-lg capitalize font-medium border transition-colors ${
+                    className={`py-1.5 px-1.5 text-xs rounded-lg capitalize font-medium border transition-colors ${
                       recurring === opt ? 'bg-warm-900 text-white border-warm-900' : 'bg-warm-50 border-warm-200 text-warm-600 hover:bg-warm-100'
                     }`}
                   >
-                    {opt}
+                    {opt === 'hourly' ? 'Every X hrs' : opt}
                   </button>
                 ))}
               </div>
+
+              {recurring === 'hourly' && (
+                <div className="p-3 bg-warm-50/80 border border-warm-200 rounded-xl space-y-2 mt-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-warm-700">Hours Apart</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-warm-500">Every</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="24"
+                        value={repeatIntervalHours}
+                        onChange={(e) => setRepeatIntervalHours(Math.max(1, Math.min(24, parseInt(e.target.value, 10) || 1)))}
+                        className="w-12 px-1.5 py-0.5 text-xs text-center font-bold text-terracotta bg-white border border-warm-300 rounded-md outline-none"
+                      />
+                      <span className="text-xs font-bold text-warm-700">
+                        {repeatIntervalHours === 1 ? 'hour' : 'hours'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-6 gap-1">
+                    {[1, 2, 3, 4, 6, 8].map((h) => (
+                      <button
+                        type="button"
+                        key={h}
+                        onClick={() => setRepeatIntervalHours(h)}
+                        className={`py-1 rounded-lg text-xs font-semibold border transition-all ${
+                          repeatIntervalHours === h
+                            ? 'bg-warm-900 text-white border-warm-900 shadow-sm'
+                            : 'bg-white text-warm-700 border-warm-200 hover:bg-warm-100'
+                        }`}
+                      >
+                        {h}h
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

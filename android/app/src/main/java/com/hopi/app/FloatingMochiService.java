@@ -20,6 +20,10 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.util.Log;
+import androidx.core.content.ContextCompat;
 import android.provider.Settings;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
@@ -553,7 +557,35 @@ public class FloatingMochiService extends Service {
             floatingView = inflater.inflate(R.layout.floating_mochi_layout, null);
             mochiImage = floatingView.findViewById(R.id.mochi_image);
             speechBubble = floatingView.findViewById(R.id.mochi_speech_bubble);
-            if (speechBubble != null) speechBubble.setOnClickListener(v -> openHopiApp());
+            if (speechBubble != null) {
+                speechBubble.setOnClickListener(v -> {
+                    CharSequence currentText = speechBubble.getText();
+                    String textStr = currentText != null ? currentText.toString() : "";
+                    boolean isRetryMsg = textStr.toLowerCase().contains("retry") || textStr.contains("Mic ready");
+                    boolean isMicOrAppMsg = textStr.contains("permission") || textStr.contains("open Hopi");
+                    boolean isWaterMsg = textStr.contains("💧") ||
+                            textStr.toLowerCase().contains("water") ||
+                            textStr.toLowerCase().contains("hydrat");
+
+                    if (isRetryMsg) {
+                        triggerHaptic();
+                        isVoiceRecording = true;
+                        startVoiceListening();
+                    } else if (!isMicOrAppMsg && (isWaterMsg || getHoursSinceWater() >= 2.0f || animState == AnimState.SAD || (animState == AnimState.SLEEP && !isRestHours()))) {
+                        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit()
+                                .putLong(PREF_LAST_WATER, System.currentTimeMillis()).apply();
+                        isDeepSleep = false;
+                        triggerHaptic();
+                        setAnimState(AnimState.WAVE);
+                        String cheer = CompanionPhrases.getRandomWaterCelebration(getCompanionName());
+                        showSpeechBubble(cheer, 4500);
+                        speakTts(cheer);
+                        animHandler.postDelayed(() -> setAnimState(AnimState.IDLE), 2400);
+                    } else {
+                        openHopiApp();
+                    }
+                });
+            }
 
             int layoutType = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                     ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE;
@@ -590,18 +622,36 @@ public class FloatingMochiService extends Service {
 
     // Voice recording lifecycle
     private void startVoiceListening() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            isVoiceRecording = false;
+            showSpeechBubble("Mic permission needed! Tap here to open Hopi 🎙️", 6000);
+            return;
+        }
+
+        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+            isVoiceRecording = false;
+            showSpeechBubble("Speech recognition is not available on this device 🐰", 4000);
+            return;
+        }
+
         showSpeechBubble("Listening... 🎙️ Speak your reminder", 12000);
         animHandler.post(() -> {
             try {
-                if (speechRecognizer == null) {
-                    speechRecognizer = SpeechRecognizer.createSpeechRecognizer(getApplicationContext());
-                    speechRecognizer.setRecognitionListener(new VoiceRecognitionListener());
+                if (speechRecognizer != null) {
+                    try { speechRecognizer.destroy(); } catch (Exception ignored) {}
+                    speechRecognizer = null;
                 }
+                speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+                speechRecognizer.setRecognitionListener(new VoiceRecognitionListener());
+
                 Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
                 intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
                 intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+                intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
+                intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, getPackageName());
                 speechRecognizer.startListening(intent);
             } catch (Exception e) {
+                Log.e("FloatingMochi", "Failed to start speech recognition", e);
                 showSpeechBubble("Mic ready! Tap to speak 🐰", 3500);
                 isVoiceRecording = false;
             }
@@ -633,13 +683,41 @@ public class FloatingMochiService extends Service {
         public void onEndOfSpeech() {}
         @Override
         public void onError(int error) {
-            if (isVoiceRecording) {
-                isVoiceRecording = false;
-                showSpeechBubble("Didn't catch that. Tap again to retry! 🐰", 3500);
+            Log.e("FloatingMochi", "SpeechRecognizer error: " + error);
+            if (!isVoiceRecording) return;
+            isVoiceRecording = false;
+            try {
+                if (speechRecognizer != null) {
+                    speechRecognizer.cancel();
+                }
+            } catch (Exception ignored) {}
+
+            switch (error) {
+                case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
+                    showSpeechBubble("Mic permission needed! Tap here to open Hopi 🎙️", 6000);
+                    break;
+                case SpeechRecognizer.ERROR_NETWORK:
+                case SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
+                    showSpeechBubble("Network issue with voice recognition. Tap to retry! 🌐", 3500);
+                    break;
+                case SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
+                    showSpeechBubble("Mic busy, please tap again in a moment 🐰", 3000);
+                    break;
+                case SpeechRecognizer.ERROR_NO_MATCH:
+                case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
+                default:
+                    showSpeechBubble("Didn't catch that. Tap again to retry! 🐰", 3500);
+                    break;
             }
         }
         @Override
         public void onResults(Bundle results) {
+            isVoiceRecording = false;
+            try {
+                if (speechRecognizer != null) {
+                    speechRecognizer.cancel();
+                }
+            } catch (Exception ignored) {}
             ArrayList<String> matches = (results != null) ? results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION) : null;
             if (matches != null && !matches.isEmpty()) {
                 handleVoiceTranscript(matches.get(0));
@@ -654,6 +732,20 @@ public class FloatingMochiService extends Service {
     }
 
     private void handleVoiceTranscript(String transcript) {
+        if (VoiceParser.isWaterIntakePhrase(transcript)) {
+            pendingClarification = null;
+            getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit()
+                    .putLong(PREF_LAST_WATER, System.currentTimeMillis()).apply();
+            isDeepSleep = false;
+            triggerHaptic();
+            setAnimState(AnimState.WAVE);
+            String cheer = CompanionPhrases.getRandomWaterCelebration(getCompanionName());
+            showSpeechBubble(cheer, 4500);
+            speakTts(cheer);
+            animHandler.postDelayed(() -> setAnimState(AnimState.IDLE), 2400);
+            return;
+        }
+
         if (pendingClarification != null) {
             VoiceParser.ParsedVoiceReminder resolved = VoiceParser.fillClarification(pendingClarification, transcript);
             pendingClarification = null;
@@ -700,6 +792,9 @@ public class FloatingMochiService extends Service {
             obj.put("time", item.time);
             obj.put("date", item.date);
             obj.put("recurring", item.recurring);
+            if (item.repeatIntervalHours > 0) {
+                obj.put("repeatIntervalHours", item.repeatIntervalHours);
+            }
             obj.put("itemType", item.itemType);
             obj.put("completed", false);
             arr.put(obj);

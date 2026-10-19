@@ -621,6 +621,77 @@ describe('hydration & companion mood domain logic', () => {
       expect(inferEmoji('Call Mom for her birthday')).toBe('📞');
       expect(inferEmoji('Evening stretching')).toBe('🏃');
     });
+
+    it('identifies conversational water intake phrases', async () => {
+      const { isWaterIntakePhrase } = await import('../src/domain/reminders/voiceParser');
+      expect(isWaterIntakePhrase('I drank water')).toBe(true);
+      expect(isWaterIntakePhrase('I just drank a glass of water')).toBe(true);
+      expect(isWaterIntakePhrase('Drank water')).toBe(true);
+      expect(isWaterIntakePhrase('Had water')).toBe(true);
+      expect(isWaterIntakePhrase('Finished my water bottle')).toBe(true);
+      expect(isWaterIntakePhrase('Logged water')).toBe(true);
+      expect(isWaterIntakePhrase('Water done')).toBe(true);
+      expect(isWaterIntakePhrase('Remind me to call mom')).toBe(false);
+      expect(isWaterIntakePhrase('Pick up groceries tomorrow')).toBe(false);
+    });
+
+    it('correctly parses hourly repeating routine and interval from voice', async () => {
+      const { parseVoiceInput } = await import('../src/domain/reminders/voiceParser');
+      const fixedNow = new Date('2026-10-19T09:00:00');
+      const result = parseVoiceInput('Remind me every 2 hours to drink water', fixedNow);
+      expect(result.itemType).toBe('routine');
+      expect(result.recurring).toBe('hourly');
+      expect(result.repeatIntervalHours).toBe(2);
+      expect(result.title).toBe('Drink water');
+      expect(result.emoji).toBe('💧');
+      expect(result.isComplete).toBe(true);
+    });
+
+    it('defaults to 1 hour if every hour is said without a number', async () => {
+      const { parseVoiceInput } = await import('../src/domain/reminders/voiceParser');
+      const fixedNow = new Date('2026-10-19T10:00:00');
+      const result = parseVoiceInput('Remind me every hour to stand and stretch', fixedNow);
+      expect(result.itemType).toBe('routine');
+      expect(result.recurring).toBe('hourly');
+      expect(result.repeatIntervalHours).toBe(1);
+      expect(result.title).toBe('Stand and stretch');
+      expect(result.isComplete).toBe(true);
+    });
+  });
+
+  describe('calculateNextHourlyOccurrence domain logic', () => {
+    it('calculates next occurrence based on interval when completed on time', async () => {
+      const { calculateNextHourlyOccurrence } = await import('../src/domain/reminders/recurrence');
+      const refDate = new Date('2026-10-19T09:15:00');
+      const next = calculateNextHourlyOccurrence('09:00 AM', '2026-10-19', 2, refDate);
+      expect(next.time).toBe('11:00 AM');
+      expect(next.date).toBe('2026-10-19');
+    });
+
+    it('advances in multiples of interval if user completes it late', async () => {
+      const { calculateNextHourlyOccurrence } = await import('../src/domain/reminders/recurrence');
+      const refDate = new Date('2026-10-19T11:45:00'); // Completed at 11:45 AM
+      const next = calculateNextHourlyOccurrence('09:00 AM', '2026-10-19', 2, refDate);
+      // 09:00 + 2h = 11:00 (past). 09:00 + 4h = 01:00 PM (future).
+      expect(next.time).toBe('01:00 PM');
+      expect(next.date).toBe('2026-10-19');
+    });
+
+    it('crosses into the next day when scheduled late at night', async () => {
+      const { calculateNextHourlyOccurrence } = await import('../src/domain/reminders/recurrence');
+      const refDate = new Date('2026-10-19T23:05:00');
+      const next = calculateNextHourlyOccurrence('11:00 PM', '2026-10-19', 3, refDate);
+      expect(next.time).toBe('02:00 AM');
+      expect(next.date).toBe('2026-10-20');
+    });
+
+    it('respects 1-hour interval for frequent habits', async () => {
+      const { calculateNextHourlyOccurrence } = await import('../src/domain/reminders/recurrence');
+      const refDate = new Date('2026-10-19T14:10:00');
+      const next = calculateNextHourlyOccurrence('02:00 PM', '2026-10-19', 1, refDate);
+      expect(next.time).toBe('03:00 PM');
+      expect(next.date).toBe('2026-10-19');
+    });
   });
 });
 

@@ -10,6 +10,8 @@ import android.os.Build;
 import android.provider.Settings;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import java.util.ArrayList;
+import java.util.List;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -71,6 +73,49 @@ public class FloatingMochiPlugin extends Plugin {
         }
         JSObject ret = new JSObject();
         ret.put("granted", granted);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void isAudioPermissionGranted(PluginCall call) {
+        boolean granted = ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.RECORD_AUDIO)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED;
+        JSObject ret = new JSObject();
+        ret.put("granted", granted);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void requestAudioPermission(PluginCall call) {
+        boolean granted = ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.RECORD_AUDIO)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED;
+        if (!granted && getActivity() != null) {
+            ActivityCompat.requestPermissions(getActivity(), new String[]{android.Manifest.permission.RECORD_AUDIO}, 103);
+        }
+        JSObject ret = new JSObject();
+        ret.put("granted", granted);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void requestAppPermissions(PluginCall call) {
+        List<String> needed = new ArrayList<>();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.POST_NOTIFICATIONS)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                needed.add(android.Manifest.permission.POST_NOTIFICATIONS);
+            }
+        }
+        if (ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.RECORD_AUDIO)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            needed.add(android.Manifest.permission.RECORD_AUDIO);
+        }
+        if (!needed.isEmpty() && getActivity() != null) {
+            ActivityCompat.requestPermissions(getActivity(), needed.toArray(new String[0]), 101);
+        }
+        JSObject ret = new JSObject();
+        ret.put("requested", !needed.isEmpty());
+        ret.put("audioGranted", ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED);
         call.resolve(ret);
     }
 
@@ -224,6 +269,16 @@ public class FloatingMochiPlugin extends Plugin {
 
         JSObject ret = new JSObject();
         ret.put("recorded", true);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void getLastWaterTime(PluginCall call) {
+        Context context = getContext();
+        SharedPreferences prefs = context.getSharedPreferences("hopi_companion_prefs", Context.MODE_PRIVATE);
+        long lastWater = prefs.getLong("last_water_time", 0);
+        JSObject ret = new JSObject();
+        ret.put("lastWaterTime", lastWater);
         call.resolve(ret);
     }
 
