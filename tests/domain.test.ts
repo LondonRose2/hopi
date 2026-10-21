@@ -18,6 +18,8 @@ import {
   calculateHydrationStatus,
   isWaterReminder,
   computeCompanionMood,
+  isReminderOverdue,
+  hasAnyOverdueReminders,
   type Reminder,
   type Settings,
 } from '../src/domain/reminders';
@@ -746,5 +748,58 @@ describe('hydration & companion mood domain logic', () => {
       expect(logs[2].goalMet).toBe(true);
     });
   });
+
+  describe('isReminderOverdue and hasAnyOverdueReminders', () => {
+    // Reference now: 2026-10-21 14:00 (2:00 PM)
+    const fixedNow = new Date(2026, 9, 21, 14, 0, 0, 0).getTime();
+
+    const baseReminder: Reminder = {
+      id: 'task-1',
+      title: 'Afternoon Prayer',
+      emoji: '🙏',
+      date: '2026-10-21',
+      time: '01:00 PM',
+      completed: false,
+      category: 'custom',
+      recurring: 'once',
+    };
+
+    it('returns false if reminder is already completed, even if in the past', () => {
+      expect(isReminderOverdue({ ...baseReminder, completed: true }, fixedNow)).toBe(false);
+    });
+
+    it('returns true if reminder is incomplete and scheduled for yesterday', () => {
+      expect(isReminderOverdue({ ...baseReminder, date: '2026-10-20' }, fixedNow)).toBe(true);
+    });
+
+    it('returns true if reminder is incomplete, scheduled today, and time has passed', () => {
+      // 01:00 PM < 02:00 PM
+      expect(isReminderOverdue({ ...baseReminder, time: '01:00 PM' }, fixedNow)).toBe(true);
+    });
+
+    it('returns false if reminder is incomplete, scheduled today, and time is in the future', () => {
+      // 03:00 PM > 02:00 PM
+      expect(isReminderOverdue({ ...baseReminder, time: '03:00 PM' }, fixedNow)).toBe(false);
+    });
+
+    it('returns false if reminder is incomplete and scheduled for tomorrow', () => {
+      expect(isReminderOverdue({ ...baseReminder, date: '2026-10-22' }, fixedNow)).toBe(false);
+    });
+
+    it('hasAnyOverdueReminders correctly detects overdue items in an array', () => {
+      const list: Reminder[] = [
+        { ...baseReminder, id: '1', completed: true },
+        { ...baseReminder, id: '2', date: '2026-10-22', time: '10:00 AM' },
+      ];
+      expect(hasAnyOverdueReminders(list, fixedNow)).toBe(false);
+
+      const listWithOverdue: Reminder[] = [
+        ...list,
+        { ...baseReminder, id: '3', date: '2026-10-21', time: '11:00 AM', completed: false },
+      ];
+      expect(hasAnyOverdueReminders(listWithOverdue, fixedNow)).toBe(true);
+    });
+  });
 });
+
 

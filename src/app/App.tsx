@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Plus, Settings as SettingsIcon, ArrowLeft } from 'lucide-react';
 import { MochiAvatar } from '../features/companion/MochiAvatar';
 import { useOverlayCompanion } from '../features/companion/useOverlayCompanion';
@@ -13,6 +13,8 @@ import { SettingsView } from '../features/settings/components/SettingsView';
 import { useReminders } from '../features/reminders/useReminders';
 import { DEFAULT_SETTINGS, type AppSettings, getCompanionName } from '../features/settings/types';
 import { type Reminder, getTodayDateString } from '../features/reminders/types';
+import { hasAnyOverdueReminders } from '../domain/reminders';
+import { floatingOverlayService } from '../services/nativeOverlay';
 
 export function App() {
   const [tab, setTab] = useState<'today' | 'upcoming' | 'settings'>('today');
@@ -31,13 +33,19 @@ export function App() {
   const todayStr = getTodayDateString();
   const todayReminders = reminders.filter((r) => r.date <= todayStr);
   const upcomingReminders = reminders.filter((r) => r.date > todayStr);
+  const hasOverdue = hasAnyOverdueReminders(reminders);
+
+  useEffect(() => { floatingOverlayService.setOverdueStatus(hasOverdue); }, [hasOverdue]);
+  useEffect(() => {
+    floatingOverlayService.consumeLaunchAction().then((a) => { if (a === 'add_task') { setActiveItem(null); setModalOpen(true); } });
+  }, []);
 
   return (
     <div className="min-h-screen bg-linen text-warm-900 flex flex-col items-center justify-end relative">
       <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#2D2721]/30 via-[#2D2721]/10 to-transparent pointer-events-none z-0" />
       <ConfettiCelebration triggerKey={confettiKey} />
       <div className="pt-safe pt-8 pb-3 flex flex-col items-center text-center select-none z-10">
-        <MochiAvatar avatar={settings.avatarChoice} state={companion.currentMood} size={110} onClick={companion.interactMochi} title={companionName} />
+        <MochiAvatar avatar={settings.avatarChoice} state={companion.currentMood} size={110} onClick={companion.interactMochi} title={companionName} hasAlert={hasOverdue} />
         <p className="text-xs font-semibold text-warm-600 mt-1 tracking-wide">{tab === 'settings' ? 'Companion Settings' : companion.statusText}</p>
         {tab !== 'settings' && <HydrationWaterPill count={companion.todayWaterCount} goal={companion.dailyWaterGoal} hydrationLevel={companion.hydrationLevel} onLogWater={() => companion.recordWater(1)} />}
       </div>

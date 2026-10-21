@@ -14,6 +14,8 @@ interface FloatingMochiPlugin {
   showSpeechBubble(options: { text: string }): Promise<{ shown: boolean }>;
   recordWaterIntake(): Promise<{ recorded: boolean }>;
   getLastWaterTime(): Promise<{ lastWaterTime: number }>;
+  setOverdueStatus(options: { hasOverdue: boolean }): Promise<{ saved: boolean }>;
+  consumeLaunchAction(): Promise<{ action?: string | null }>;
 }
 
 const NativeFloatingMochi = registerPlugin<FloatingMochiPlugin>('FloatingMochi');
@@ -211,4 +213,22 @@ export const floatingOverlayService = {
       await (NativeFloatingMochi as any).setCompanionAvatar({ avatar, name });
     } catch {}
   },
+
+  async setOverdueStatus(hasOverdue: boolean): Promise<void> {
+    if (!Capacitor.isNativePlatform()) return;
+    try {
+      await (NativeFloatingMochi as any).setOverdueStatus({ hasOverdue });
+    } catch {}
+  },
+
+  async consumeLaunchAction(): Promise<string | null> {
+    if (!Capacitor.isNativePlatform()) return null;
+    try {
+      const res = await (NativeFloatingMochi as any).consumeLaunchAction();
+      return res?.action ?? null;
+    } catch {
+      return null;
+    }
+  },
 };
+

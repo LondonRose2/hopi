@@ -7,14 +7,85 @@
     android:gravity="center_vertical"
     android:padding="8dp">
 
-    <!-- Draggable Mochi Avatar -->
-    <ImageView
-        android:id="@+id/mochi_image"
-        android:layout_width="72dp"
-        android:layout_height="72dp"
-        android:src="@drawable/mochi_avatar"
-        android:contentDescription="Mochi Companion"
-        android:scaleType="fitCenter" />
+    <!-- Avatar Container with Overdue Alert Dot -->
+    <FrameLayout
+        android:id="@+id/mochi_avatar_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <!-- Draggable Mochi Avatar -->
+        <ImageView
+            android:id="@+id/mochi_image"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:src="@drawable/mochi_avatar"
+            android:contentDescription="Mochi Companion"
+            android:scaleType="fitCenter" />
+
+        <!-- Overdue Task Indicator Dot -->
+        <View
+            android:id="@+id/mochi_alert_dot"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/alert_dot_bg"
+            android:elevation="8dp"
+            android:visibility="gone" />
+
+    </FrameLayout>
+
+    <!-- Quick Action Menu -->
+    <LinearLayout
+        android:id="@+id/mochi_quick_menu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:orientation="vertical"
+        android:background="@drawable/quick_menu_bg"
+        android:elevation="8dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/btn_menu_water"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/quick_menu_btn_bg"
+            android:textColor="#1E3A8A"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="💧 Log Water" />
+
+        <TextView
+            android:id="@+id/btn_menu_task"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/quick_menu_btn_bg"
+            android:textColor="#C4704B"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="📝 Add Task" />
+
+        <TextView
+            android:id="@+id/btn_menu_open"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/quick_menu_btn_bg"
+            android:textColor="#3D3833"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="🏠 Open Hopi" />
+
+    </LinearLayout>
 
     <!-- Interactive Speech Bubble -->
     <TextView

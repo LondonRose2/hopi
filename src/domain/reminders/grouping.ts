@@ -67,3 +67,44 @@ export function groupUpcomingTasksByDay(
 
   return grouped;
 }
+
+export interface OverdueCheckable {
+  completed: boolean;
+  date: string;
+  time: string;
+}
+
+/**
+ * Determines whether a reminder is overdue given the current timestamp.
+ * A completed reminder is never overdue.
+ * An uncompleted reminder is overdue if its scheduled date and time have passed.
+ */
+export function isReminderOverdue(reminder: OverdueCheckable, now = Date.now()): boolean {
+  if (reminder.completed) return false;
+  let hours = 9;
+  let minutes = 0;
+  const match = reminder.time.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  if (match) {
+    hours = parseInt(match[1], 10);
+    minutes = parseInt(match[2], 10);
+    const ampm = match[3]?.toUpperCase();
+    if (ampm === 'PM' && hours < 12) hours += 12;
+    if (ampm === 'AM' && hours === 12) hours = 0;
+  }
+  const dateParts = reminder.date.split('-');
+  const year = parseInt(dateParts[0], 10);
+  const month = (parseInt(dateParts[1], 10) || 1) - 1;
+  const day = parseInt(dateParts[2], 10);
+  if (!year || isNaN(month) || !day) return false;
+
+  const scheduled = new Date(year, month, day, hours, minutes, 0, 0).getTime();
+  return scheduled < now;
+}
+
+/**
+ * Checks if there is at least one uncompleted reminder that is overdue.
+ */
+export function hasAnyOverdueReminders(reminders: OverdueCheckable[], now = Date.now()): boolean {
+  return reminders.some((r) => isReminderOverdue(r, now));
+}
+

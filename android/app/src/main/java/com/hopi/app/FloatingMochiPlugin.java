@@ -337,4 +337,37 @@ public class FloatingMochiPlugin extends Plugin {
         ret.put("saved", true);
         call.resolve(ret);
     }
+
+    @PluginMethod
+    public void setOverdueStatus(PluginCall call) {
+        boolean hasOverdue = call.getBoolean("hasOverdue", false);
+        Context context = getContext();
+        try {
+            Intent intent = new Intent(context, FloatingMochiService.class);
+            intent.setAction(FloatingMochiService.ACTION_SET_OVERDUE);
+            intent.putExtra(FloatingMochiService.EXTRA_HAS_OVERDUE, hasOverdue);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent);
+            } else {
+                context.startService(intent);
+            }
+        } catch (Exception ignored) {}
+
+        JSObject ret = new JSObject();
+        ret.put("saved", true);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void consumeLaunchAction(PluginCall call) {
+        String action = null;
+        if (getActivity() != null && getActivity().getIntent() != null) {
+            action = getActivity().getIntent().getStringExtra("action");
+            getActivity().getIntent().removeExtra("action");
+        }
+        JSObject ret = new JSObject();
+        ret.put("action", action);
+        call.resolve(ret);
+    }
 }
+

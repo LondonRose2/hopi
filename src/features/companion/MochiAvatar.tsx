@@ -12,6 +12,7 @@ interface MochiAvatarProps {
   onDoubleTap?: () => void;
   title?: string;
   avatar?: string;
+  hasAlert?: boolean;
 }
 
 export function MochiAvatar({
@@ -23,6 +24,7 @@ export function MochiAvatar({
   onDoubleTap,
   title = 'Companion',
   avatar = 'mochi',
+  hasAlert = false,
 }: MochiAvatarProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [currentFrame, setCurrentFrame] = useState<Frame | null>(null);
@@ -162,6 +164,12 @@ export function MochiAvatar({
       style={{ width: size, height: size }}
     >
       <canvas ref={canvasRef} style={{ width: size, height: size }} className="drop-shadow-[0_4px_10px_rgba(224,122,95,0.12)] pointer-events-none select-none" />
+      {hasAlert && (
+        <span
+          className="absolute top-1 right-2 w-3.5 h-3.5 bg-terracotta-500 border-2 border-white rounded-full shadow-sm animate-pulse pointer-events-none z-10"
+          title="Overdue task pending"
+        />
+      )}
       {!loaded && <div className="absolute inset-0 flex items-center justify-center text-xs text-warm-400">Loading...</div>}
     </div>
   );

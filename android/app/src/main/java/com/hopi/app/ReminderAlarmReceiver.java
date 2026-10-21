@@ -61,6 +61,7 @@ public class ReminderAlarmReceiver extends BroadcastReceiver {
             Intent bubbleIntent = new Intent(context, FloatingMochiService.class);
             bubbleIntent.setAction(FloatingMochiService.ACTION_SHOW_SPEECH);
             bubbleIntent.putExtra(FloatingMochiService.EXTRA_SPEECH_TEXT, emoji + " " + title + " ✨");
+            bubbleIntent.putExtra(FloatingMochiService.EXTRA_IS_REMINDER, true);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(bubbleIntent);
             } else {
