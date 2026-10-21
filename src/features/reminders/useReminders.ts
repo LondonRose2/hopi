@@ -22,20 +22,30 @@ export function useReminders(onCheer?: () => void, onWaterLogged?: () => void) {
     } catch {}
   }, []);
 
-  // Sync scheduled reminders, ingest voice reminders, and request notification permission
+  // Sync scheduled reminders, urgent task queue, and ingest voice/completed tasks
   useEffect(() => {
     floatingOverlayService.requestNotificationPermission();
     reminders.forEach((r) => {
-      if (!r.completed) {
-        floatingOverlayService.scheduleReminder(r);
-      }
+      if (!r.completed) floatingOverlayService.scheduleReminder(r);
     });
 
-    const checkVoiceReminders = async () => {
-      const pending = await floatingOverlayService.getPendingVoiceReminders();
-      if (pending && pending.length > 0) {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const pendingToday = reminders
+      .filter((r) => !r.completed && r.date <= todayStr)
+      .map((r) => ({ id: r.id, title: r.title, time: r.time }));
+    floatingOverlayService.syncUrgentTasks(pendingToday);
+  }, [reminders]);
+
+  useEffect(() => {
+    const syncNativeState = async () => {
+      const [pendingVoice, pendingCompleted] = await Promise.all([
+        floatingOverlayService.getPendingVoiceReminders(),
+        floatingOverlayService.getPendingCompletedTasks(),
+      ]);
+
+      if (pendingVoice && pendingVoice.length > 0) {
         setReminders((prev) => {
-          const newItems = pending.filter((p: Reminder) => !prev.some((r) => r.id === p.id));
+          const newItems = pendingVoice.filter((p: Reminder) => !prev.some((r) => r.id === p.id));
           if (newItems.length === 0) return prev;
           const merged = [...newItems, ...prev];
           persist(merged);
@@ -43,9 +53,23 @@ export function useReminders(onCheer?: () => void, onWaterLogged?: () => void) {
         });
         await floatingOverlayService.clearPendingVoiceReminders();
       }
+
+      if (pendingCompleted && pendingCompleted.length > 0) {
+        const completedSet = new Set(pendingCompleted);
+        setReminders((prev) => {
+          const updated = prev.map((r) => (completedSet.has(r.id) ? { ...r, completed: true } : r));
+          persist(updated);
+          return updated;
+        });
+        onCheer?.();
+        await floatingOverlayService.clearPendingCompletedTasks();
+      }
     };
-    checkVoiceReminders();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    syncNativeState();
+    window.addEventListener('focus', syncNativeState);
+    return () => window.removeEventListener('focus', syncNativeState);
+  }, [persist, onCheer]);
 
   const handleToggle = useCallback((id: string) => {
     setReminders((prev) => {

@@ -13,13 +13,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content">
 
-        <!-- Draggable Mochi Avatar -->
+        <!-- Draggable Companion Avatar -->
         <ImageView
             android:id="@+id/mochi_image"
             android:layout_width="72dp"
             android:layout_height="72dp"
             android:src="@drawable/mochi_avatar"
-            android:contentDescription="Mochi Companion"
+            android:contentDescription="Companion Avatar"
             android:scaleType="fitCenter" />
 
         <!-- Overdue Task Indicator Dot -->
@@ -36,67 +36,61 @@
 
     </FrameLayout>
 
-    <!-- Quick Action Menu -->
+    <!-- Quick Action Menu (Transparent Container with Spaced Pills) -->
     <LinearLayout
         android:id="@+id/mochi_quick_menu"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="10dp"
         android:orientation="vertical"
-        android:background="@drawable/quick_menu_bg"
-        android:elevation="8dp"
         android:visibility="gone">
 
+        <!-- 1. Urgent Task Button (Dynamic Variable) -->
+        <TextView
+            android:id="@+id/btn_menu_urgent_task"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/quick_menu_btn_bg"
+            android:textColor="#2D3748"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true"
+            android:elevation="6dp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:maxWidth="220dp"
+            android:text="✅ Complete Task" />
+
+        <!-- 2. Log Water Button -->
         <TextView
             android:id="@+id/btn_menu_water"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:background="@drawable/quick_menu_btn_bg"
             android:textColor="#1E3A8A"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:clickable="true"
             android:focusable="true"
+            android:elevation="6dp"
             android:text="💧 Log Water" />
 
-        <TextView
-            android:id="@+id/btn_menu_voice"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:background="@drawable/quick_menu_btn_bg"
-            android:textColor="#5B483A"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:clickable="true"
-            android:focusable="true"
-            android:text="🎙️ Voice Task" />
-
+        <!-- 3. Add Task Button -->
         <TextView
             android:id="@+id/btn_menu_task"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="8dp"
             android:background="@drawable/quick_menu_btn_bg"
             android:textColor="#C4704B"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:clickable="true"
             android:focusable="true"
+            android:elevation="6dp"
             android:text="📝 Add Task" />
-
-        <TextView
-            android:id="@+id/btn_menu_open"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:background="@drawable/quick_menu_btn_bg"
-            android:textColor="#3D3833"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:clickable="true"
-            android:focusable="true"
-            android:text="🏠 Open Hopi" />
 
     </LinearLayout>
 

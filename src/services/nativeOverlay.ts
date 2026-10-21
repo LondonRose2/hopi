@@ -52,62 +52,32 @@ export const floatingOverlayService = {
 
   async isPermissionGranted(): Promise<boolean> {
     if (!Capacitor.isNativePlatform()) return false;
-    try {
-      const res = await NativeFloatingMochi.isOverlayPermissionGranted();
-      return res?.granted ?? false;
-    } catch {
-      return false;
-    }
+    try { return (await NativeFloatingMochi.isOverlayPermissionGranted())?.granted ?? false; } catch { return false; }
   },
 
   async requestPermission(): Promise<boolean> {
     if (!Capacitor.isNativePlatform()) return false;
-    try {
-      const res = await NativeFloatingMochi.requestOverlayPermission();
-      return res?.requested ?? false;
-    } catch {
-      return false;
-    }
+    try { return (await NativeFloatingMochi.requestOverlayPermission())?.requested ?? false; } catch { return false; }
   },
 
   async requestNotificationPermission(): Promise<boolean> {
     if (!Capacitor.isNativePlatform()) return true;
-    try {
-      const res = await NativeFloatingMochi.requestNotificationPermission();
-      return res?.granted ?? true;
-    } catch {
-      return true;
-    }
+    try { return (await NativeFloatingMochi.requestNotificationPermission())?.granted ?? true; } catch { return true; }
   },
 
   async isAudioPermissionGranted(): Promise<boolean> {
     if (!Capacitor.isNativePlatform()) return true;
-    try {
-      const res = await NativeFloatingMochi.isAudioPermissionGranted();
-      return res?.granted ?? false;
-    } catch {
-      return false;
-    }
+    try { return (await NativeFloatingMochi.isAudioPermissionGranted())?.granted ?? false; } catch { return false; }
   },
 
   async requestAudioPermission(): Promise<boolean> {
     if (!Capacitor.isNativePlatform()) return true;
-    try {
-      const res = await NativeFloatingMochi.requestAudioPermission();
-      return res?.granted ?? false;
-    } catch {
-      return false;
-    }
+    try { return (await NativeFloatingMochi.requestAudioPermission())?.granted ?? false; } catch { return false; }
   },
 
   async requestAppPermissions(): Promise<boolean> {
     if (!Capacitor.isNativePlatform()) return true;
-    try {
-      const res = await NativeFloatingMochi.requestAppPermissions();
-      return res?.requested ?? false;
-    } catch {
-      return false;
-    }
+    try { return (await NativeFloatingMochi.requestAppPermissions())?.requested ?? false; } catch { return false; }
   },
 
   async setEnabled(enabled: boolean): Promise<boolean> {
@@ -218,9 +188,25 @@ export const floatingOverlayService = {
 
   async setOverdueStatus(hasOverdue: boolean): Promise<void> {
     if (!Capacitor.isNativePlatform()) return;
+    try { await (NativeFloatingMochi as any).setOverdueStatus({ hasOverdue }); } catch {}
+  },
+
+  async syncUrgentTasks(tasks: { id: string; title: string; time: string }[]): Promise<void> {
+    if (!Capacitor.isNativePlatform()) return;
+    try { await (NativeFloatingMochi as any).setUrgentTasks({ tasksJson: JSON.stringify(tasks) }); } catch {}
+  },
+
+  async getPendingCompletedTasks(): Promise<string[]> {
+    if (!Capacitor.isNativePlatform()) return [];
     try {
-      await (NativeFloatingMochi as any).setOverdueStatus({ hasOverdue });
-    } catch {}
+      const res = await (NativeFloatingMochi as any).getPendingCompletedTasks();
+      return res?.completedTaskIds ? JSON.parse(res.completedTaskIds) : [];
+    } catch { return []; }
+  },
+
+  async clearPendingCompletedTasks(): Promise<void> {
+    if (!Capacitor.isNativePlatform()) return;
+    try { await (NativeFloatingMochi as any).clearPendingCompletedTasks(); } catch {}
   },
 
   async consumeLaunchAction(): Promise<string | null> {

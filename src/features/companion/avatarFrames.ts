@@ -122,8 +122,8 @@ export const PIP_FRAMES: AvatarFrameSet = {
     sniff: { sx: 86, sy: 667, sw: 86, sh: 74 },
   },
   sleep: {
-    still: { sx: 516, sy: 854, sw: 86, sh: 74 }, // Tucked down, eyes closed!
-    breath: { sx: 602, sy: 854, sw: 86, sh: 74 }, // Gentle soft breathing
+    still: { sx: 344, sy: 854, sw: 86, sh: 74 }, // Tucked down, eyes closed curled pose!
+    breath: { sx: 258, sy: 854, sw: 86, sh: 74 }, // Gentle soft slumber breath
   },
   wave: [
     { sx: 0, sy: 292, sw: 86, sh: 76 },

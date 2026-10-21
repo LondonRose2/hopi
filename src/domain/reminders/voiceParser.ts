@@ -11,6 +11,7 @@ export interface ParsedVoiceReminder {
   date: string | null;      // e.g. "2026-10-19"
   recurring: RecurringType;
   repeatIntervalHours?: number;
+  targetDays?: number;
   isComplete: boolean;
   missingField?: 'time' | 'title' | null;
   clarificationPrompt?: string | null;
@@ -22,8 +23,34 @@ const ROUTINE_KEYWORDS = [
   'every monday', 'every tuesday', 'every wednesday', 'every thursday', 'every friday', 'every saturday', 'every sunday'
 ];
 
-export function classifyItemType(transcript: string): { itemType: ItemType; recurring: RecurringType; repeatIntervalHours?: number } {
+export function parseHabitTargetDays(transcript: string): number {
   const lower = transcript.toLowerCase();
+  const explicitDaysMatch = lower.match(/\b(?:for\s+)?(\d+)\s*(?:days|day)\b/);
+  if (explicitDaysMatch) {
+    const parsed = parseInt(explicitDaysMatch[1], 10);
+    if (parsed > 0 && parsed <= 365) return parsed;
+  }
+  return 60; // default 60 days
+}
+
+export function classifyItemType(transcript: string): {
+  itemType: ItemType;
+  recurring: RecurringType;
+  repeatIntervalHours?: number;
+  targetDays?: number;
+} {
+  const lower = transcript.toLowerCase();
+
+  // Habit Former intent: "add a new habit...", "start habit...", "meditation habit..."
+  if (/\b(?:habit|habits|form habit|build habit|start habit|new habit)\b/i.test(lower)) {
+    const isWeekdays = lower.includes('weekday') || lower.includes('week day');
+    return {
+      itemType: 'habit',
+      recurring: isWeekdays ? 'weekdays' : 'daily',
+      targetDays: parseHabitTargetDays(transcript),
+    };
+  }
+
   const hourlyMatch = lower.match(/\bevery\s+(\d+)?\s*(?:hour|hours|hr|hrs)\b/);
   if (hourlyMatch) {
     const hours = hourlyMatch[1] ? parseInt(hourlyMatch[1], 10) : 1;
@@ -158,8 +185,10 @@ export function parseVoiceDate(transcript: string, now: Date = new Date()): stri
 export function cleanTitle(transcript: string): string {
   let cleaned = transcript
     .replace(/^(?:remind me to|remind me|set a reminder to|set a reminder for|don't forget to|schedule a routine to|add a task to|create a task to|add routine to|remember to)\s+/i, '')
+    .replace(/^(?:start|add|create|build|form|set up)?\s*(?:a\s+)?(?:new\s+)?(?:daily\s+|weekday\s+|weekdays\s+)?(?:habit|habits)\s*(?:to|for)?\s+/i, '')
     .replace(/\b(?:every month|every day|every week|every morning|every evening|daily|weekly|weekdays)\b/gi, '')
     .replace(/\b(?:every \d+\s*(?:hours|hour|hrs|hr)|every hour)\b/gi, '')
+    .replace(/\b(?:for \d+\s*(?:days|day)|habit|habits)\b/gi, '')
     .replace(/\b(?:on the (?:first|second|third|fourth|last)|rotary)\b/gi, '')
     .replace(/\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/gi, '')
     .replace(/\b(?:tomorrow|today|tonight|next week|at \d{1,2}(?::\d{2})?\s*(?:am|pm|o'clock)?)\b/gi, '')
@@ -176,7 +205,7 @@ export function cleanTitle(transcript: string): string {
 
 export function parseVoiceInput(transcript: string, now: Date = new Date()): ParsedVoiceReminder {
   const trimmed = transcript.trim();
-  const { itemType, recurring, repeatIntervalHours } = classifyItemType(trimmed);
+  const { itemType, recurring, repeatIntervalHours, targetDays } = classifyItemType(trimmed);
   let time = parseVoiceTime(trimmed);
   const date = parseVoiceDate(trimmed, now);
   const title = cleanTitle(trimmed);
@@ -212,6 +241,7 @@ export function parseVoiceInput(transcript: string, now: Date = new Date()): Par
     date,
     recurring,
     repeatIntervalHours,
+    targetDays,
     isComplete: !isMissingTime && !isMissingTitle,
     missingField,
     clarificationPrompt,

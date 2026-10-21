@@ -436,5 +436,48 @@ public class FloatingMochiPlugin extends Plugin {
         ret.put("action", action);
         call.resolve(ret);
     }
+
+    @PluginMethod
+    public void setUrgentTasks(PluginCall call) {
+        String tasksJson = call.getString("tasksJson", "[]");
+        Context context = getContext();
+        SharedPreferences prefs = context.getSharedPreferences("hopi_companion_prefs", Context.MODE_PRIVATE);
+        prefs.edit().putString("urgent_tasks_queue", tasksJson).apply();
+
+        try {
+            Intent intent = new Intent(context, FloatingMochiService.class);
+            intent.setAction(FloatingMochiService.ACTION_UPDATE_URGENT_TASKS);
+            intent.putExtra("tasksJson", tasksJson);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent);
+            } else {
+                context.startService(intent);
+            }
+        } catch (Exception ignored) {}
+
+        JSObject ret = new JSObject();
+        ret.put("saved", true);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void getPendingCompletedTasks(PluginCall call) {
+        Context context = getContext();
+        SharedPreferences prefs = context.getSharedPreferences("hopi_companion_prefs", Context.MODE_PRIVATE);
+        String completed = prefs.getString("pending_completed_tasks", "[]");
+        JSObject ret = new JSObject();
+        ret.put("completedTaskIds", completed);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void clearPendingCompletedTasks(PluginCall call) {
+        Context context = getContext();
+        SharedPreferences prefs = context.getSharedPreferences("hopi_companion_prefs", Context.MODE_PRIVATE);
+        prefs.edit().putString("pending_completed_tasks", "[]").apply();
+        JSObject ret = new JSObject();
+        ret.put("cleared", true);
+        call.resolve(ret);
+    }
 }
 

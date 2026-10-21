@@ -1,5 +1,5 @@
 export type RecurringType = 'none' | 'daily' | 'weekdays' | 'weekly' | 'hourly';
-export type ItemType = 'task' | 'routine';
+export type ItemType = 'task' | 'routine' | 'habit';
 
 export interface Reminder {
   id: string;
@@ -11,6 +11,7 @@ export interface Reminder {
   recurring?: RecurringType;
   repeatIntervalHours?: number; // e.g. 1 to 24 hours apart
   itemType?: ItemType;
+  targetDays?: number;
 }
 
 export const EMOJI_OPTIONS = [

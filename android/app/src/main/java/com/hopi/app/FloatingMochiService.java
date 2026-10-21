@@ -52,6 +52,7 @@ public class FloatingMochiService extends Service {
     public static final String ACTION_RECORD_WATER = "com.hopi.app.ACTION_RECORD_WATER";
     public static final String ACTION_UPDATE_AVATAR = "com.hopi.app.ACTION_UPDATE_AVATAR";
     public static final String ACTION_SET_OVERDUE = "com.hopi.app.ACTION_SET_OVERDUE";
+    public static final String ACTION_UPDATE_URGENT_TASKS = "com.hopi.app.ACTION_UPDATE_URGENT_TASKS";
     public static final String EXTRA_SPEECH_TEXT = "extra_speech_text";
     public static final String EXTRA_HAS_OVERDUE = "extra_has_overdue";
     public static final String EXTRA_IS_REMINDER = "extra_is_reminder";
@@ -68,10 +69,9 @@ public class FloatingMochiService extends Service {
     private TextView speechBubble;
     private View mochiAlertDot;
     private View mochiQuickMenu;
+    private TextView btnMenuUrgentTask;
     private TextView btnMenuWater;
-    private TextView btnMenuVoice;
     private TextView btnMenuTask;
-    private TextView btnMenuOpen;
     private WindowManager.LayoutParams params;
 
 
@@ -196,16 +196,16 @@ public class FloatingMochiService extends Service {
 
     private int getSleepStillFrame() {
         String a = getCompanionAvatar();
-        if ("pip".equals(a)) return R.drawable.pip_sleep_5;
+        if ("pip".equals(a)) return R.drawable.pip_sleep_4;
         if ("snowdrop".equals(a)) return R.drawable.snowdrop_sleep_5;
-        return R.drawable.mochi_sleep_5;
+        return R.drawable.mochi_sleep_4;
     }
 
     private int getSleepBreathFrame() {
         String a = getCompanionAvatar();
-        if ("pip".equals(a)) return R.drawable.pip_sleep_6;
+        if ("pip".equals(a)) return R.drawable.pip_sleep_3;
         if ("snowdrop".equals(a)) return R.drawable.snowdrop_sleep_6;
-        return R.drawable.mochi_sleep_6;
+        return R.drawable.mochi_sleep_3;
     }
 
     private int getCuriousFrame() {
@@ -229,7 +229,7 @@ public class FloatingMochiService extends Service {
 
     private boolean isRestHours() {
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-        return hour >= 0 && hour < 8; // 12 AM to 8 AM
+        return hour >= 23 || hour < 8; // 11 PM to 8 AM
     }
 
     private float getHoursSinceWater() {
@@ -278,10 +278,29 @@ public class FloatingMochiService extends Service {
 
     private final Runnable hideQuickMenuRunnable = () -> hideQuickMenu();
 
+    private void refreshUrgentTaskButton() {
+        if (btnMenuUrgentTask == null) return;
+        try {
+            SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+            String tasksJson = prefs.getString("urgent_tasks_queue", "[]");
+            JSONArray arr = new JSONArray(tasksJson);
+            if (arr.length() > 0) {
+                JSONObject first = arr.getJSONObject(0);
+                String title = first.optString("title", "Task");
+                btnMenuUrgentTask.setText("✅ " + title);
+            } else {
+                btnMenuUrgentTask.setText("✨ All tasks done!");
+            }
+        } catch (Exception e) {
+            btnMenuUrgentTask.setText("✨ All tasks done!");
+        }
+    }
+
     private void showQuickMenu() {
         if (speechBubble != null) speechBubble.setVisibility(View.GONE);
         if (mochiQuickMenu != null) {
             animHandler.removeCallbacks(hideQuickMenuRunnable);
+            refreshUrgentTaskButton();
             mochiQuickMenu.setVisibility(View.VISIBLE);
             mochiQuickMenu.setAlpha(0f);
             mochiQuickMenu.setScaleX(0.85f);
@@ -329,10 +348,12 @@ public class FloatingMochiService extends Service {
                 if (currentIdleAction == 0) {
                     mochiImage.setImageResource(idleFrames[0]);
                     double roll = Math.random();
-                    if (roll < 0.80) currentIdleAction = 1; // single blink
-                    else currentIdleAction = 2; // double blink
+                    if (roll < 0.45) currentIdleAction = 1; // single blink
+                    else if (roll < 0.65) currentIdleAction = 2; // double blink
+                    else if (roll < 0.82) currentIdleAction = 3; // curious head-tilt
+                    else currentIdleAction = 4; // cute groom / wing wiggle
                     idleActionStep = 0;
-                    animHandler.postDelayed(this, 4500 + (int)(Math.random() * 3200));
+                    animHandler.postDelayed(this, 3600 + (int)(Math.random() * 2200));
                     return;
                 } else if (currentIdleAction == 1) {
                     // Single natural blink (calm and quick)
@@ -347,7 +368,7 @@ public class FloatingMochiService extends Service {
                     } else {
                         mochiImage.setImageResource(idleFrames[0]);
                         currentIdleAction = 0;
-                        animHandler.postDelayed(this, 4500 + (int)(Math.random() * 3200));
+                        animHandler.postDelayed(this, 3800 + (int)(Math.random() * 2400));
                     }
                     return;
                 } else if (currentIdleAction == 2) {
@@ -367,7 +388,31 @@ public class FloatingMochiService extends Service {
                     } else {
                         mochiImage.setImageResource(idleFrames[0]);
                         currentIdleAction = 0;
-                        animHandler.postDelayed(this, 4800 + (int)(Math.random() * 3500));
+                        animHandler.postDelayed(this, 4000 + (int)(Math.random() * 2600));
+                    }
+                    return;
+                } else if (currentIdleAction == 3) {
+                    // Curious head tilt
+                    if (idleActionStep == 0) {
+                        mochiImage.setImageResource(getCuriousFrame());
+                        idleActionStep = 1;
+                        animHandler.postDelayed(this, 1200);
+                    } else {
+                        mochiImage.setImageResource(idleFrames[0]);
+                        currentIdleAction = 0;
+                        animHandler.postDelayed(this, 3600 + (int)(Math.random() * 2200));
+                    }
+                    return;
+                } else if (currentIdleAction == 4) {
+                    // Groom / wing wiggle
+                    if (idleActionStep == 0) {
+                        mochiImage.setImageResource(getGroomFrame());
+                        idleActionStep = 1;
+                        animHandler.postDelayed(this, 1200);
+                    } else {
+                        mochiImage.setImageResource(idleFrames[0]);
+                        currentIdleAction = 0;
+                        animHandler.postDelayed(this, 3600 + (int)(Math.random() * 2200));
                     }
                     return;
                 }
@@ -523,6 +568,8 @@ public class FloatingMochiService extends Service {
                 isDeepSleep = false;
                 animHandler.removeCallbacks(animRunnable);
                 animHandler.post(animRunnable);
+            } else if (ACTION_UPDATE_URGENT_TASKS.equals(intent.getAction())) {
+                refreshUrgentTaskButton();
             }
         }
         return START_STICKY;
@@ -602,10 +649,59 @@ public class FloatingMochiService extends Service {
             speechBubble = floatingView.findViewById(R.id.mochi_speech_bubble);
             mochiAlertDot = floatingView.findViewById(R.id.mochi_alert_dot);
             mochiQuickMenu = floatingView.findViewById(R.id.mochi_quick_menu);
+            btnMenuUrgentTask = floatingView.findViewById(R.id.btn_menu_urgent_task);
             btnMenuWater = floatingView.findViewById(R.id.btn_menu_water);
-            btnMenuVoice = floatingView.findViewById(R.id.btn_menu_voice);
             btnMenuTask = floatingView.findViewById(R.id.btn_menu_task);
-            btnMenuOpen = floatingView.findViewById(R.id.btn_menu_open);
+
+            if (btnMenuUrgentTask != null) {
+                btnMenuUrgentTask.setOnClickListener(v -> {
+                    triggerHaptic();
+                    try {
+                        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+                        String tasksJson = prefs.getString("urgent_tasks_queue", "[]");
+                        JSONArray arr = new JSONArray(tasksJson);
+                        if (arr.length() > 0) {
+                            JSONObject completedTask = arr.getJSONObject(0);
+                            String taskId = completedTask.optString("id");
+                            String taskTitle = completedTask.optString("title", "Task");
+
+                            // 1. Record completed task ID in pending_completed_tasks
+                            String completedList = prefs.getString("pending_completed_tasks", "[]");
+                            JSONArray completedArr = new JSONArray(completedList);
+                            completedArr.put(taskId);
+                            prefs.edit().putString("pending_completed_tasks", completedArr.toString()).apply();
+
+                            // 2. Remove completed task from urgent_tasks_queue
+                            JSONArray remainingArr = new JSONArray();
+                            for (int i = 1; i < arr.length(); i++) {
+                                remainingArr.put(arr.getJSONObject(i));
+                            }
+                            prefs.edit().putString("urgent_tasks_queue", remainingArr.toString()).apply();
+
+                            // 3. Companion celebration
+                            isDeepSleep = false;
+                            setAnimState(AnimState.WAVE);
+                            String cheer = "Awesome! Finished: " + taskTitle + "! ✨";
+                            showSpeechBubble(cheer, 4000);
+                            speakTts(cheer);
+                            animHandler.postDelayed(() -> setAnimState(AnimState.IDLE), 2400);
+
+                            // 4. Update button text immediately to next task
+                            if (remainingArr.length() > 0) {
+                                JSONObject nextTask = remainingArr.getJSONObject(0);
+                                btnMenuUrgentTask.setText("✅ " + nextTask.optString("title", "Task"));
+                            } else {
+                                btnMenuUrgentTask.setText("✨ All tasks done!");
+                            }
+                        } else {
+                            showSpeechBubble("All tasks done for today! 🎉", 3000);
+                            hideQuickMenu();
+                        }
+                    } catch (Exception e) {
+                        hideQuickMenu();
+                    }
+                });
+            }
 
             if (btnMenuWater != null) {
                 btnMenuWater.setOnClickListener(v -> {
@@ -622,28 +718,11 @@ public class FloatingMochiService extends Service {
                 });
             }
 
-            if (btnMenuVoice != null) {
-                btnMenuVoice.setOnClickListener(v -> {
-                    hideQuickMenu();
-                    triggerHaptic();
-                    isVoiceRecording = true;
-                    startVoiceListening();
-                });
-            }
-
             if (btnMenuTask != null) {
                 btnMenuTask.setOnClickListener(v -> {
                     hideQuickMenu();
                     triggerHaptic();
                     openHopiApp("add_task");
-                });
-            }
-
-            if (btnMenuOpen != null) {
-                btnMenuOpen.setOnClickListener(v -> {
-                    hideQuickMenu();
-                    triggerHaptic();
-                    openHopiApp(null);
                 });
             }
 
@@ -999,7 +1078,7 @@ public class FloatingMochiService extends Service {
                         lastTouchX = event.getRawX();
                         touchStartTime = System.currentTimeMillis();
                         isDragging = false;
-                        animHandler.postDelayed(longPressRunnable, 500);
+                        animHandler.postDelayed(longPressRunnable, 320);
                         return true;
 
                     case MotionEvent.ACTION_MOVE:
@@ -1041,7 +1120,14 @@ public class FloatingMochiService extends Service {
                         }
 
                         // Long press completed and finger released: keep mic recording!
-                        if (isVoiceRecording && (System.currentTimeMillis() - touchStartTime >= 500)) {
+                        if (isVoiceRecording && (System.currentTimeMillis() - touchStartTime >= 300)) {
+                            return true;
+                        }
+
+                        // If already voice recording and tapped quickly (< 300ms), user wants to stop/cancel recording
+                        if (isVoiceRecording) {
+                            triggerHaptic();
+                            stopVoiceListening();
                             return true;
                         }
 
@@ -1050,11 +1136,6 @@ public class FloatingMochiService extends Service {
                         if (now - lastTapUpTime < 380) {
                             lastTapUpTime = 0;
                             animHandler.removeCallbacks(singleTapRunnable);
-                            if (isVoiceRecording) {
-                                triggerHaptic();
-                                stopVoiceListening();
-                                return true;
-                            }
                             hideQuickMenu();
                             triggerHaptic();
                             setAnimState(AnimState.WAVE);
@@ -1065,8 +1146,8 @@ public class FloatingMochiService extends Service {
                             animHandler.postDelayed(() -> setAnimState(AnimState.IDLE), 2400);
                         } else {
                             lastTapUpTime = now;
-                            if (!isVoiceRecording && (now - touchStartTime < 500)) {
-                                animHandler.postDelayed(singleTapRunnable, 380);
+                            if (now - touchStartTime < 320) {
+                                animHandler.postDelayed(singleTapRunnable, 350);
                             }
                         }
                         return true;

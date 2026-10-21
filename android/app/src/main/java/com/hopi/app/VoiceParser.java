@@ -8,13 +8,14 @@ public class VoiceParser {
 
     public static class ParsedVoiceReminder {
         public String rawTranscript;
-        public String itemType; // "task" or "routine"
+        public String itemType; // "task", "routine", or "habit"
         public String title;
         public String emoji;
         public String time; // e.g. "08:00 PM"
         public String date; // "YYYY-MM-DD"
         public String recurring; // "none", "daily", "weekdays", "weekly", "hourly"
         public int repeatIntervalHours = 0;
+        public int targetDays = 0;
         public boolean isComplete;
         public String missingField; // "time", "title", or null
         public String clarificationPrompt;
@@ -47,34 +48,51 @@ public class VoiceParser {
 
         String lower = trimmed.toLowerCase();
         boolean isRoutine = false;
-        Pattern hourlyPattern = Pattern.compile("\\bevery\\s+(\\d+)?\\s*(?:hour|hours|hr|hrs)\\b", Pattern.CASE_INSENSITIVE);
-        Matcher hourlyMatcher = hourlyPattern.matcher(lower);
-        if (hourlyMatcher.find()) {
-            isRoutine = true;
-            r.itemType = "routine";
-            r.recurring = "hourly";
-            String hGroup = hourlyMatcher.group(1);
-            r.repeatIntervalHours = (hGroup != null && !hGroup.isEmpty()) ? Integer.parseInt(hGroup) : 1;
-        } else {
-            for (String kw : ROUTINE_KEYWORDS) {
-                if (lower.contains(kw)) {
-                    isRoutine = true;
-                    break;
-                }
-            }
 
-            if (isRoutine) {
-                r.itemType = "routine";
-                if (lower.contains("weekday")) {
-                    r.recurring = "weekdays";
-                } else if (lower.contains("weekly") || lower.contains("every week") || lower.matches(".*every (monday|tuesday|wednesday|thursday|friday|saturday|sunday).*")) {
-                    r.recurring = "weekly";
-                } else {
-                    r.recurring = "daily";
+        if (lower.matches(".*\\b(habit|habits|form habit|build habit|start habit|new habit)\\b.*")) {
+            r.itemType = "habit";
+            r.recurring = (lower.contains("weekday") || lower.contains("week day")) ? "weekdays" : "daily";
+            Pattern daysPattern = Pattern.compile("\\b(?:for\\s+)?(\\d+)\\s*(?:days|day)\\b", Pattern.CASE_INSENSITIVE);
+            Matcher daysMatcher = daysPattern.matcher(lower);
+            if (daysMatcher.find() && daysMatcher.group(1) != null) {
+                try {
+                    r.targetDays = Integer.parseInt(daysMatcher.group(1));
+                } catch (Exception e) {
+                    r.targetDays = 60;
                 }
             } else {
-                r.itemType = "task";
-                r.recurring = "none";
+                r.targetDays = 60;
+            }
+        } else {
+            Pattern hourlyPattern = Pattern.compile("\\bevery\\s+(\\d+)?\\s*(?:hour|hours|hr|hrs)\\b", Pattern.CASE_INSENSITIVE);
+            Matcher hourlyMatcher = hourlyPattern.matcher(lower);
+            if (hourlyMatcher.find()) {
+                isRoutine = true;
+                r.itemType = "routine";
+                r.recurring = "hourly";
+                String hGroup = hourlyMatcher.group(1);
+                r.repeatIntervalHours = (hGroup != null && !hGroup.isEmpty()) ? Integer.parseInt(hGroup) : 1;
+            } else {
+                for (String kw : ROUTINE_KEYWORDS) {
+                    if (lower.contains(kw)) {
+                        isRoutine = true;
+                        break;
+                    }
+                }
+
+                if (isRoutine) {
+                    r.itemType = "routine";
+                    if (lower.contains("weekday")) {
+                        r.recurring = "weekdays";
+                    } else if (lower.contains("weekly") || lower.contains("every week") || lower.matches(".*every (monday|tuesday|wednesday|thursday|friday|saturday|sunday).*")) {
+                        r.recurring = "weekly";
+                    } else {
+                        r.recurring = "daily";
+                    }
+                } else {
+                    r.itemType = "task";
+                    r.recurring = "none";
+                }
             }
         }
 
@@ -199,9 +217,10 @@ public class VoiceParser {
 
     public static String cleanTitle(String transcript) {
         String cleaned = transcript
-                .replaceAll("(?i)^(?:remind me to|remind me|set a reminder to|set a reminder for|don't forget to|schedule a routine to|add a task to|create a task to|add routine to|remember to)\\s+", "")
+                .replaceAll("(?i)^(?:remind me to|remind me|set a reminder to|set a reminder for|don't forget to|schedule a routine to|add a task to|create a task to|add routine to|remember to|add a new habit to|add a new habit|add a habit to|add a habit|add habit to|add habit|create a habit to|create a habit|start a habit to|start a habit|start habit|build a habit to|build a habit|form a habit to|form a habit|new habit to|new habit)\\s+", "")
                 .replaceAll("(?i)\\b(?:every month|every day|every week|every morning|every evening|daily|weekly|weekdays)\\b", "")
                 .replaceAll("(?i)\\b(?:every \\d+\\s*(?:hours|hour|hrs|hr)|every hour)\\b", "")
+                .replaceAll("(?i)\\b(?:for \\d+\\s*(?:days|day)|habit)\\b", "")
                 .replaceAll("(?i)\\b(?:on the (?:first|second|third|fourth|last)|rotary)\\b", "")
                 .replaceAll("(?i)\\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)\\b", "")
                 .replaceAll("(?i)\\b(?:tomorrow|today|tonight|next week|at \\d{1,2}(?::\\d{2})?\\s*(?:am|pm|o'clock)?)\\b", "")

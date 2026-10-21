@@ -57,17 +57,17 @@ export function MochiAvatar({
       const scheduleIdleAction = () => {
         if (!active) return;
         const roll = Math.random();
-        if (roll < 0.80) {
+        if (roll < 0.45) {
           // Single natural blink (calm and brief)
           setCurrentFrame(frameSet.idle.blinkHalf);
           addTimeout(() => {
             setCurrentFrame(frameSet.idle.blinkClosed);
             addTimeout(() => {
               setCurrentFrame(frameSet.idle.still);
-              addTimeout(scheduleIdleAction, 4500 + Math.random() * 3200);
+              addTimeout(scheduleIdleAction, 3800 + Math.random() * 2400);
             }, 110);
           }, 60);
-        } else {
+        } else if (roll < 0.65) {
           // Double blink
           setCurrentFrame(frameSet.idle.blinkClosed);
           addTimeout(() => {
@@ -76,13 +76,27 @@ export function MochiAvatar({
               setCurrentFrame(frameSet.idle.blinkClosed);
               addTimeout(() => {
                 setCurrentFrame(frameSet.idle.still);
-                addTimeout(scheduleIdleAction, 4800 + Math.random() * 3500);
+                addTimeout(scheduleIdleAction, 4000 + Math.random() * 2600);
               }, 90);
             }, 70);
           }, 90);
+        } else if (roll < 0.82) {
+          // Curious head-tilt
+          setCurrentFrame(frameSet.idle.curious);
+          addTimeout(() => {
+            setCurrentFrame(frameSet.idle.still);
+            addTimeout(scheduleIdleAction, 3600 + Math.random() * 2200);
+          }, 1200);
+        } else {
+          // Sniff / wing wiggle / groom
+          setCurrentFrame(frameSet.idle.sniff);
+          addTimeout(() => {
+            setCurrentFrame(frameSet.idle.still);
+            addTimeout(scheduleIdleAction, 3600 + Math.random() * 2200);
+          }, 1200);
         }
       };
-      addTimeout(scheduleIdleAction, 3500 + Math.random() * 2000);
+      addTimeout(scheduleIdleAction, 3000 + Math.random() * 1800);
     } else if (state === 'sleep') {
       setCurrentFrame(frameSet.sleep.still);
       const scheduleSleepCycle = () => {
@@ -135,7 +149,7 @@ export function MochiAvatar({
 
   const handlePointerDown = () => {
     isPressing.current = true;
-    longPressTimer.current = setTimeout(() => { if (isPressing.current) onLongPress?.(); }, 500);
+    longPressTimer.current = setTimeout(() => { if (isPressing.current) onLongPress?.(); }, 320);
   };
 
   const handlePointerUp = () => {
