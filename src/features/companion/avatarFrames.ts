@@ -79,8 +79,8 @@ export const SNOWDROP_FRAMES: AvatarFrameSet = {
     sniff: { sx: 86, sy: 682, sw: 86, sh: 60 },
   },
   sleep: {
-    still: { sx: 516, sy: 868, sw: 86, sh: 58 }, // Flat on tummy, head on paws, eyes closed!
-    breath: { sx: 602, sy: 868, sw: 86, sh: 58 }, // Gentle slumber breathing
+    still: { sx: 344, sy: 492, sw: 86, sh: 60 }, // Head on paws, eyes peacefully closed
+    breath: { sx: 258, sy: 492, sw: 86, sh: 60 }, // Gentle soft slumber breathing
   },
   wave: [
     { sx: 0, sy: 305, sw: 86, sh: 65 },

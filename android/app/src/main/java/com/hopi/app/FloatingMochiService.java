@@ -148,7 +148,7 @@ public class FloatingMochiService extends Service {
     };
     private static final int[] SNOWDROP_SLEEP_INTRO = {
         R.drawable.snowdrop_sleep_0, R.drawable.snowdrop_sleep_1, R.drawable.snowdrop_sleep_2,
-        R.drawable.snowdrop_sleep_3, R.drawable.snowdrop_sleep_4
+        R.drawable.snowdrop_sleep_3
     };
 
     private String getCompanionAvatar() {
@@ -197,15 +197,15 @@ public class FloatingMochiService extends Service {
     private int getSleepStillFrame() {
         String a = getCompanionAvatar();
         if ("pip".equals(a)) return R.drawable.pip_sleep_4;
-        if ("snowdrop".equals(a)) return R.drawable.snowdrop_sleep_5;
-        return R.drawable.mochi_sleep_4;
+        if ("snowdrop".equals(a)) return R.drawable.snowdrop_sleep_4;
+        return R.drawable.mochi_sleep_5;
     }
 
     private int getSleepBreathFrame() {
         String a = getCompanionAvatar();
         if ("pip".equals(a)) return R.drawable.pip_sleep_3;
-        if ("snowdrop".equals(a)) return R.drawable.snowdrop_sleep_6;
-        return R.drawable.mochi_sleep_3;
+        if ("snowdrop".equals(a)) return R.drawable.snowdrop_sleep_3;
+        return R.drawable.mochi_sleep_6;
     }
 
     private int getCuriousFrame() {

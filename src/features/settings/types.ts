@@ -8,6 +8,8 @@ export interface AppSettings {
   encouragements: boolean;
   notifications: boolean;
   floatingCompanion: boolean;
+  showHabitOnAvatar: boolean;
+  showOverdueAlertDot: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -17,6 +19,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   encouragements: true,
   notifications: true,
   floatingCompanion: true,
+  showHabitOnAvatar: true,
+  showOverdueAlertDot: true,
 };
 
 export function normalizeAvatar(choice?: string): AvatarId {

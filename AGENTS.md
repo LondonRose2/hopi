@@ -46,6 +46,14 @@ hopi/
         HydrationWaterPill.tsx      # Daily water counter, goal tracker & quick-log (<100 lines)
         useOverlayCompanion.ts      # Permission state & auto-sync hook (<100 lines)
         useCompanionMood.ts         # Companion mood, hydration & sleep state orchestrator (<200 lines)
+      habits/
+        useHabits.ts                # Persistence, alarms & habit progress orchestrator (<150 lines)
+        components/
+          HabitsView.tsx            # Top orchestrator for Habits tab (<100 lines)
+          HabitCard.tsx             # Active habit card with glowing energy tube & checkmark (<150 lines)
+          AchievedHabitsSection.tsx # Trophy hall for completed habits (<100 lines)
+          HabitEditModal.tsx        # Creation modal with 7/21/30/60/90 presets & number pad (<250 lines)
+          HabitEnergyPill.tsx       # Sub-avatar micro habit energy tube (<50 lines)
       reminders/
         types.ts            # Reminder domain contracts & sample routines
         useReminders.ts     # Persistence, reminder scheduling & water intake (<200 lines)
@@ -65,7 +73,8 @@ hopi/
           HydrationHistorySection.tsx # 7-day hydration history list & target goal (<150 lines)
     domain/
       companion/
-        phrases.ts      # 50+ diverse non-repeating phrases & selector engine (<150 lines)
+        phrases.ts      # 60+ diverse non-repeating phrases, habit encouragements & selector engine (<200 lines)
+      habits/           # Pure habit domain calculations (types, streak grace, 7-day reset, energy colors)
       reminders/        # Pure domain calculations (schemas, grouping, sleep schedule, hydration, waterTracker, recurrence)
     services/
       nativeOverlay.ts  # Bridge to Android native floating overlay & alarms (<100 lines)

@@ -95,10 +95,29 @@ export const MIDNIGHT_SLEEP_REMINDERS = [
   'Put the phone away and let your mind completely recharge tonight. 💤',
 ] as const;
 
+export const HABIT_ENCOURAGEMENTS = [
+  'Every small step counts towards your habit. You have got this! 🌱',
+  'Consistency is not about perfection; it is about showing up with grace. ✨',
+  'Habits grow gently like morning seeds. Be kind to yourself today. 🌿',
+  'One gentle day at a time builds lasting peace. 🕊️',
+  'Proud of the journey you are cultivating. Keep going! ☀️',
+  'A little progress every day adds up to big transformation. 🌸',
+  'Your habit journey is personal and peaceful. Honor your effort today. 🪴',
+] as const;
+
+export const HABIT_REENGAGEMENT_ENCOURAGEMENTS = [
+  'Remember: missing a couple of days does not erase your progress. Take a gentle breath and start fresh today! 🌿',
+  'No shame in pauses—your habit journey is waiting whenever you are ready. 💛',
+  'Grace over guilt. Today is a brand new opportunity to step into your habit. ☀️',
+  'Small beginnings always count. Take one gentle step forward today. 🌱',
+  'It is completely okay to pick up where you left off. You are capable! 🌸',
+] as const;
+
 // Non-repeating selector engine
 export class PhraseSelector {
   private history: string[] = [];
   private maxHistory: number;
+  private rotationCount = 0;
 
   constructor(maxHistory = 10) {
     this.maxHistory = maxHistory;
@@ -126,7 +145,11 @@ export class PhraseSelector {
     hoursSinceWater: number,
     isRestHours: boolean,
     currentHour: number,
-    companionName = 'Companion'
+    companionName = 'Companion',
+    habitContext?: {
+      hasActiveHabits: boolean;
+      daysSinceLastCheckin?: number;
+    }
   ): string {
     if (isRestHours) {
       return `Resting quietly for the night. 🌙`;
@@ -142,7 +165,22 @@ export class PhraseSelector {
       return this.pick(WATER_REMINDERS, companionName);
     }
 
+    this.rotationCount++;
+
+    if (habitContext?.hasActiveHabits) {
+      const missedDays = habitContext.daysSinceLastCheckin ?? 0;
+      if (missedDays > 2 && this.rotationCount % 5 === 0) {
+        return this.pick(HABIT_REENGAGEMENT_ENCOURAGEMENTS, companionName);
+      }
+      if (this.rotationCount % 12 === 0) {
+        return this.pick(HABIT_ENCOURAGEMENTS, companionName);
+      }
+    }
+
     const pool: string[] = [...ENCOURAGEMENTS, ...MINDFULNESS, ...COMPANION_PRESENCE];
+    if (habitContext?.hasActiveHabits) {
+      pool.push(...HABIT_ENCOURAGEMENTS);
+    }
     if (currentHour >= 6 && currentHour < 12) pool.push(...MORNING_PHRASES);
     else if (currentHour >= 12 && currentHour < 17) pool.push(...AFTERNOON_PHRASES);
     else if (currentHour >= 17 && currentHour < 21) pool.push(...EVENING_PHRASES);

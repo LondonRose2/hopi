@@ -11,50 +11,62 @@ _Last updated: 2026-10-22 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 
 ## 📍 Where we are
 - **GitHub Repository:** [`https://github.com/LondonRose2/hopi`](https://github.com/LondonRose2/hopi) (tracked on `master`).
-- **Release APK Built (v1.1.6):**
+- **Release APK Built (v1.2.0):**
   - **Local Wi-Fi Browser Link (Mobile Chrome):** [`http://192.168.0.103:8088/`](http://192.168.0.103:8088/) or direct download at [`http://192.168.0.103:8088/hopi.apk`](http://192.168.0.103:8088/hopi.apk)
-  - **Local File Path:** `release/hopi.apk` (11.99 MB, built today).
+  - **Local File Path:** `release/hopi.apk` (12.10 MB, built today).
 - **Features Included:**
-  - **Long-Press Voice Recording (Seamless Finger Release):**
-    - Responsive 320ms long-press trigger on floating avatar with haptic feedback.
-    - Letting finger go keeps recording smoothly without needing to hold down while speaking.
-    - Removed microphone button from the menu options to keep the UI clean.
-    - Quick tap while recording stops/cancels gracefully.
-  - **Floating Quick Menu Overhaul (No Box, Transparent Spacing, Exactly 3 Options):**
-    - Removed enclosing rectangular container box (`quick_menu_bg`); spacing between buttons is completely transparent.
-    - Increased button size to generous rounded pills (elevation, warm linen stroke, 14dp padding, 8dp vertical gap).
-    - Exactly 3 pill options:
-      1. `✅ [Urgent Task Title]` (e.g. `✅ Put up laundry`): Dynamic variable displaying the most urgent pending task for today with a green checkmark. Tapping it completes the task, speaks a cheer, triggers a celebratory wave, and immediately updates to the next urgent task or "✨ All tasks done!".
-      2. `💧 Log Water`: 1-tap water logging with instant cheer speech bubble and TTS celebration.
-      3. `📝 Add Task`: Opens Hopi directly to the task creation sheet.
-  - **Two-Way Urgent Task Synchronization:**
-    - Completing the urgent task on the floating overlay stores the ID in `pending_completed_tasks`.
-    - Returning to the Hopi app automatically consumes completed tasks, marks them checked, triggers confetti bursts, and persists to storage.
-    - Editing/completing tasks in Hopi immediately syncs the updated queue to the floating overlay.
-  - **Pip (Penguin) Active Poses & Fixed Sleep Past Midnight:**
-    - Added curious head-tilt (`pip_curious`) and wing wiggle / groom (`pip_groom`) to idle animation cycles on both Android overlay and React app.
-    - Fixed sleep frames for Pip: `pip_sleep_4` (curled down tucked pose) as still frame and `pip_sleep_3` as soft slumber breath, eliminating head-bobbing.
-    - Fixed rest hours past midnight (11 PM – 8 AM) so Pip stays soundly asleep.
+  - **Habit Former & 3-Way Top Navigation (`Today` | `Habits` | `Upcoming`):**
+    - Dedicated **Habits** tab for tracking and cultivating long-term daily routines.
+    - **Default 60 Days:** Default journey length of 60 days to form lasting neurological habits.
+    - **Target Days Input:** Quick-select preset pills (`7d`, `21d`, `30d`, `60d ✨`, `90d`) plus direct number keyboard input (`inputMode="numeric"`) for custom day counts (1–365).
+    - **Flexible Cadence:** 2-way toggle between **Daily** and **Weekdays** (Mon–Fri).
+    - **Reminder Alarm:** Native clock picker for daily reminder alarms via `AlarmManager`.
+  - **Grace-Filled Inactivity Rule (Miss a Day vs Miss a Week):**
+    - Missing 1 to 6 days incurs **no penalty**; accumulated progress is retained.
+    - Missing 7 or more consecutive days (1 full week) resets the counter to 0 for a gentle, shame-free fresh start.
+  - **Dynamic Visual Energy Tube & Color Progression:**
+    - Capsule energy gauge showing progress percentage and color-shifting momentum:
+      - 0%–24%: Soft Warm Terracotta (`#E07A5F`) — Seedling stage
+      - 25%–49%: Golden Honey (`#F59E0B`) — Momentum stage
+      - 50%–74%: Fresh Sage / Emerald (`#10B981`) — Growth stage
+      - 75%–99%: Vibrant Cyan / Sapphire (`#06B6D4`) — Bloom stage
+      - 100%: Radiant Gold Gradient & Trophy (`🏆`) — Goal Reached
+  - **Sub-Avatar Micro Habit Indicator:**
+    - Small pill beneath companion avatar (`🎯 3 of 60 days`) with glowing mini energy tube.
+    - Can be toggled on/off in Settings.
+  - **Hall of Achieved Habits:**
+    - Collapsible celebration archive for completed habits with golden trophy badges (`🏆`).
+  - **Companion Habit Affirmations & Adaptive Rotation:**
+    - Included habit encouragement pool in phrase rotation when at least 1 habit is active; excluded when 0 habits exist.
+    - When user misses > 2 days, re-engagement encouragements are prioritized (every 5th rotation).
+  - **Settings Toggles (Hide Options):**
+    - Toggle for "Habit Tracker on Avatar" (show/hide mini energy tube under companion).
+    - Toggle for "Overdue Alert Dot" (show/hide terracotta dot on avatar).
+  - **Microphone Voice Integration (Web + Android Overlay):**
+    - Speech recognition for habits ("Add a new habit morning reading at 8am for 60 days", "Start a weekday habit yoga for 30 days at 7:30 am") in both TypeScript and Android Java (`VoiceParser.java`).
+  - **Mochi & Snowdrop Slumber Posture Fix (No Bobbing/Looking Up):**
+    - Resolved issue where Mochi and Snowdrop would look down into sleep for a few seconds and then look back up repeatedly.
+    - Updated `FloatingMochiService.java` and `avatarFrames.ts` with authentic flat, grounded resting frames (`mochi_sleep_5`/`mochi_sleep_6` for Mochi; `snowdrop_sleep_4`/`snowdrop_sleep_3` for Snowdrop) and gentle 750ms breathing shifts.
   - **Test & Type Health:**
-    - 82 passing tests in Vitest (`npm.cmd test`).
-    - Zero TypeScript errors (`npm.cmd run build`).
+    - **102 passing tests** in Vitest (`npm.cmd test`).
+    - **Zero TypeScript errors** (`npm.cmd run typecheck`).
     - Strict file budgets respected across all files (views <= 100 lines, components <= 200/300 lines, services <= 300 lines).
 
 ---
 
 ## 💡 Why it matters
-- Eliminates friction for quick voice reminders (fast long press, release to speak) while providing instant 1-tap completion for the most urgent daily task directly from any Android home screen or app.
-- Pip feels alive, expressive, and restful with proper sleep postures and organic daytime idle animations.
+- Fosters consistent, shame-free personal growth by balancing gentle grace (missing a day doesn't erase progress) with clear accountability (missing a full week provides a clean restart).
+- Gives users full aesthetic control to hide or display the sub-avatar habit tracker and overdue alert dot.
 
 ---
 
 ## ✅ Decisions made (and why)
 | Decision | Why |
 |---|---|
-| **Transparent Container for Floating Menu** | Replaced the heavy card background with floating individual pill buttons separated by 8dp transparent space for a modern, uncluttered look. |
-| **Two-Way Urgent Task Queue Sync** | Maintains the queue in SharedPreferences (`urgent_tasks_queue` & `pending_completed_tasks`) so the floating button updates immediately when completed from overlay, and automatically updates main app state on resume. |
-| **Curled Sleeping Pose (`pip_sleep_4`) for Pip** | `pip_sleep_5` and `6` in the sprite sheet were standing poses; `pip_sleep_4` (height 59, y=24) is the curled tucked sleeping frame. |
-| **320ms Long-Press with Persistent Recording** | Allows effortless 1-handed voice access without thumb strain from prolonged holding. |
+| **7-Day Inactivity Threshold** | Missed days (1–6) don't reset streaks to eliminate anxiety, but a full week of absence resets count to 0 for a clean reset. |
+| **5-Stage Energy Tube** | Visual feedback shifts from earthy terracotta to radiant gold + trophy at 100% to maximize dopamine and consistency. |
+| **Adaptive Phrase Rotation** | Encourages habit momentum only when active habits exist, and gently surfaces reassuring re-engagement phrases every 5 rotations when >2 days are missed. |
+| **Modular Barrel Architecture** | Used `src/features/habits/index.ts` and `src/features/companion/index.ts` to keep `App.tsx` strictly under its 100-line ceiling (99 lines). |
 
 ---
 
@@ -64,7 +76,8 @@ _Last updated: 2026-10-22 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 ---
 
 ## ➡️ Next step (proposed — Rachel to confirm)
-1. Download the new `v1.1.6` APK directly from your phone browser at [`http://192.168.0.103:8088/hopi.apk`](http://192.168.0.103:8088/hopi.apk).
-2. Tap the floating companion to test the transparent 3-button menu and tap `✅ [Urgent Task]` to see it complete and advance to your next task.
-3. Test long-pressing the avatar for ~320ms, release your finger, speak a reminder, and watch it automatically parse and save.
-4. Switch avatar to Pip in Settings to view the new curious head-tilt, wing wiggles, and curled-down midnight sleep.
+1. Download `hopi.apk` (v1.2.0) from [`http://192.168.0.103:8088/hopi.apk`](http://192.168.0.103:8088/hopi.apk).
+2. Tap the new **Habits** tab in Hopi to view the Habit Former interface and test forming a habit (e.g. 60 days, 30 days, or custom days).
+3. Tap the 1-tap checkmark to check off today's habit and observe the energy tube fill up and the speech bubble cheer.
+4. Test voice reminder: speak "Add a new habit daily reading at 8pm for 60 days".
+5. In Settings, test toggling "Habit Tracker on Avatar" and "Overdue Alert Dot" to verify they hide and show smoothly.

@@ -14,7 +14,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['tests/**/*.test.ts'],
+    include: ['tests/**/*.test.ts', 'tests/*.test.ts'],
     exclude: ['**/android/**', '**/node_modules/**', '**/dist/**'],
   },
 });

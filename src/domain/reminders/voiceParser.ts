@@ -106,9 +106,14 @@ export function inferEmoji(title: string): string {
 export function parseVoiceTime(transcript: string): string | null {
   const lower = transcript.toLowerCase();
 
-  // Exact time: e.g. "8:30 pm", "8:30pm", "8 pm", "8pm", "8:00 AM", "8 o'clock"
-  const timeRegex = /(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm|o'clock)?\b/i;
-  const match = lower.match(timeRegex);
+  // 1. Time with explicit meridiem (e.g. "8:30 pm", "7:30 am", "at 8 am", "8 o'clock")
+  const withMeridiem = lower.match(/(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm|o'clock)\b/i);
+  // 2. Explicit 'at <time>' (e.g. "at 8:30", "at 8")
+  const withAt = lower.match(/\bat\s+(\d{1,2})(?::(\d{2}))?\b/i);
+  // 3. Colon time (e.g. "08:30")
+  const withColon = lower.match(/\b(\d{1,2}):(\d{2})\b/i);
+
+  const match = withMeridiem || withAt || withColon;
 
   if (match) {
     let hour = parseInt(match[1], 10);
@@ -117,7 +122,6 @@ export function parseVoiceTime(transcript: string): string | null {
 
     if (hour >= 1 && hour <= 24) {
       if (meridiem === "O'CLOCK" || !meridiem) {
-        // If unspecified, assume PM if hour between 1 and 7, else AM or PM based on contextual words
         if (lower.includes('tonight') || lower.includes('evening') || lower.includes('afternoon') || (hour >= 1 && hour <= 7)) {
           meridiem = 'PM';
         } else {

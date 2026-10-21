@@ -21,7 +21,8 @@ export function useCompanionMood(
   reminders: Reminder[],
   onCheer?: () => void,
   companionName = 'Mochi',
-  onWaterLogged?: (newCount: number) => void
+  onWaterLogged?: (newCount: number) => void,
+  habitContext?: { hasActiveHabits: boolean; daysSinceLastCheckin?: number }
 ) {
   const [overrideState, setOverrideState] = useState<MochiState | null>(null);
   const [customPhrase, setCustomPhrase] = useState<string | null>(null);
@@ -70,7 +71,10 @@ export function useCompanionMood(
     return () => window.removeEventListener('focus', syncNative);
   }, []);
 
-  const isRestHours = useMemo(() => new Date().getHours() < 8, []);
+  const isRestHours = useMemo(() => {
+    const h = new Date().getHours();
+    return h >= 23 || h < 8;
+  }, []);
 
   const hasOverdueWater = useMemo(() => {
     const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
@@ -104,14 +108,14 @@ export function useCompanionMood(
     if (customPhrase) return customPhrase;
     if (currentMood === 'sleep') {
       return isRestHours && !isManualAwake
-        ? 'Resting quietly for the night 🌙'
+        ? companionPhrases.getMidnightSleepReminder(companionName)
         : 'Tired from low hydration. Tap 💧 to water!';
     }
     if (currentMood === 'sad') return 'Thirsty & drooping. Tap 💧 to water!';
     if (currentMood === 'cheer') return 'Water logged! Happy and hydrated 💧';
     if (currentMood === 'wave') return 'Ready when you are. 🌿';
-    return companionPhrases.getPhrase(hoursSinceDrink, isRestHours, new Date().getHours(), companionName);
-  }, [customPhrase, currentMood, isRestHours, isManualAwake, hoursSinceDrink, companionName]);
+    return companionPhrases.getPhrase(hoursSinceDrink, isRestHours, new Date().getHours(), companionName, habitContext);
+  }, [customPhrase, currentMood, isRestHours, isManualAwake, hoursSinceDrink, companionName, habitContext]);
 
   const recordWater = useCallback((amount: number = 1) => {
     const now = Date.now();
@@ -162,16 +166,19 @@ export function useCompanionMood(
     if (currentMood === 'sleep') {
       setIsManualAwake(true);
       setOverrideState('wave');
-      setCustomPhrase('Active. Ready to assist. 🌿');
-      setTimeout(() => { setOverrideState(null); setCustomPhrase(null); }, 2500);
+      const reminder = isRestHours
+        ? companionPhrases.getMidnightSleepReminder(companionName)
+        : 'Active. Ready to assist. 🌿';
+      setCustomPhrase(reminder);
+      setTimeout(() => { setOverrideState(null); setCustomPhrase(null); }, 3500);
       setTimeout(() => setIsManualAwake(false), 60000);
       return;
     }
     setOverrideState('wave');
-    const phrase = companionPhrases.getPhrase(hoursSinceDrink, isRestHours, new Date().getHours(), companionName);
+    const phrase = companionPhrases.getPhrase(hoursSinceDrink, isRestHours, new Date().getHours(), companionName, habitContext);
     setCustomPhrase(phrase);
     setTimeout(() => { setOverrideState(null); setCustomPhrase(null); }, 3500);
-  }, [currentMood, hydrationLevel, hasOverdueWater, recordWater, hoursSinceDrink, isRestHours, companionName]);
+  }, [currentMood, hydrationLevel, hasOverdueWater, recordWater, hoursSinceDrink, isRestHours, companionName, habitContext]);
 
   return {
     currentMood,

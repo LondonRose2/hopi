@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Moon, Sparkles, Bell, Layers, Mic } from 'lucide-react';
+import { Moon, Sparkles, Bell, Layers, Mic, Trophy, AlertCircle } from 'lucide-react';
 import { type AppSettings, normalizeAvatar, getCompanionName } from '../types';
 import { floatingOverlayService } from '../../../services/nativeOverlay';
 import { HydrationHistorySection } from './HydrationHistorySection';
@@ -120,6 +120,8 @@ export function SettingsView({
         {toggleRow('Encouragements', 'Heartwarming micro-affirmations', <Sparkles className="w-4 h-4" />, settings.encouragements, 'encouragements')}
         {toggleRow('Gentle Notifications', 'Timely reminder alerts', <Bell className="w-4 h-4" />, settings.notifications, 'notifications')}
         {toggleRow('Floating Companion', `Keep ${companionName} visible over other apps`, <Layers className="w-4 h-4" />, settings.floatingCompanion, 'floatingCompanion')}
+        {toggleRow('Habit Tracker on Avatar', 'Display mini habit progress tube under companion', <Trophy className="w-4 h-4" />, settings.showHabitOnAvatar, 'showHabitOnAvatar')}
+        {toggleRow('Overdue Alert Dot', 'Show alert indicator when items are overdue', <AlertCircle className="w-4 h-4" />, settings.showOverdueAlertDot, 'showOverdueAlertDot')}
         <div className="flex items-center justify-between p-3.5 bg-white rounded-pebble border border-[#EAE2D5] shadow-pebble">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-warm-100 flex items-center justify-center text-warm-600 shrink-0"><Mic className="w-4 h-4" /></div>

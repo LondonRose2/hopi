@@ -155,13 +155,25 @@ public class VoiceParser {
     }
 
     public static String parseTime(String lower) {
-        Pattern pattern = Pattern.compile("(?:at\\s+)?(\\d{1,2})(?::(\\d{2}))?\\s*(am|pm|o'clock)?\\b", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(lower);
+        Pattern patternWithMeridiem = Pattern.compile("(?:at\\s+)?(\\d{1,2})(?::(\\d{2}))?\\s*(am|pm|o'clock)\\b", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = patternWithMeridiem.matcher(lower);
 
-        if (matcher.find()) {
+        if (!matcher.find()) {
+            Pattern patternWithAt = Pattern.compile("\\bat\\s+(\\d{1,2})(?::(\\d{2}))?\\b", Pattern.CASE_INSENSITIVE);
+            matcher = patternWithAt.matcher(lower);
+            if (!matcher.find()) {
+                Pattern patternWithColon = Pattern.compile("\\b(\\d{1,2}):(\\d{2})\\b", Pattern.CASE_INSENSITIVE);
+                matcher = patternWithColon.matcher(lower);
+                if (!matcher.find()) {
+                    matcher = null;
+                }
+            }
+        }
+
+        if (matcher != null) {
             int hour = Integer.parseInt(matcher.group(1));
-            String minute = matcher.group(2) != null ? matcher.group(2) : "00";
-            String meridiem = matcher.group(3) != null ? matcher.group(3).toUpperCase() : "";
+            String minute = matcher.groupCount() >= 2 && matcher.group(2) != null ? matcher.group(2) : "00";
+            String meridiem = matcher.groupCount() >= 3 && matcher.group(3) != null ? matcher.group(3).toUpperCase() : "";
 
             if (hour >= 1 && hour <= 24) {
                 if (meridiem.equals("O'CLOCK") || meridiem.isEmpty()) {
