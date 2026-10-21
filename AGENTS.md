@@ -83,6 +83,25 @@ hopi/
 
 ---
 
+## 3. Feature-to-File Quick Lookup Matrix
+Before searching or exploring, consult this index to jump directly to the exact file:
+
+| Feature / System | Primary Files | Key Functions & Responsibilities |
+|---|---|---|
+| **Floating Overlay & Dragging** | [`FloatingMochiService.java`](file:///c:/Users/Rachel/Documents/apps/hopi/android/app/src/main/java/com/hopi/app/FloatingMochiService.java) | `initOverlay()`, `setupTouchListener()`, WindowManager layout |
+| **Floating Menu Layout & Styling** | [`floating_mochi_layout.xml`](file:///c:/Users/Rachel/Documents/apps/hopi/android/app/src/main/res/layout/floating_mochi_layout.xml), [`quick_menu_btn_bg.xml`](file:///c:/Users/Rachel/Documents/apps/hopi/android/app/src/main/res/drawable/quick_menu_btn_bg.xml) | 3 pill buttons (`btn_menu_urgent_task`, `btn_menu_water`, `btn_menu_task`) |
+| **Long-Press & Voice Recording** | [`FloatingMochiService.java`](file:///c:/Users/Rachel/Documents/apps/hopi/android/app/src/main/java/com/hopi/app/FloatingMochiService.java) | `startVoiceListening()`, 320ms `longPressRunnable`, finger-release keep-listening |
+| **Voice Intent Parsing (NLP)** | [`VoiceParser.java`](file:///c:/Users/Rachel/Documents/apps/hopi/android/app/src/main/java/com/hopi/app/VoiceParser.java), [`voiceParser.ts`](file:///c:/Users/Rachel/Documents/apps/hopi/src/domain/reminders/voiceParser.ts) | `parse()`, `isWaterIntakePhrase()`, time/date/recurrence extraction |
+| **Urgent Task Two-Way Sync** | [`FloatingMochiPlugin.java`](file:///c:/Users/Rachel/Documents/apps/hopi/android/app/src/main/java/com/hopi/app/FloatingMochiPlugin.java), [`nativeOverlay.ts`](file:///c:/Users/Rachel/Documents/apps/hopi/src/services/nativeOverlay.ts), [`useReminders.ts`](file:///c:/Users/Rachel/Documents/apps/hopi/src/features/reminders/useReminders.ts) | `syncUrgentTasks()`, `getPendingCompletedTasks()`, 1-tap complete & celebrate |
+| **Companion Sprites & Animations** | [`avatarFrames.ts`](file:///c:/Users/Rachel/Documents/apps/hopi/src/features/companion/avatarFrames.ts), [`MochiAvatar.tsx`](file:///c:/Users/Rachel/Documents/apps/hopi/src/features/companion/MochiAvatar.tsx) | `MOCHI_FRAMES`, `PIP_FRAMES`, `SNOWDROP_FRAMES`, idle sequencer (blinks, curious, groom) |
+| **Sleep Schedule & Rest Hours** | [`sleepSchedule.ts`](file:///c:/Users/Rachel/Documents/apps/hopi/src/domain/reminders/sleepSchedule.ts), [`FloatingMochiService.java`](file:///c:/Users/Rachel/Documents/apps/hopi/android/app/src/main/java/com/hopi/app/FloatingMochiService.java) | `isQuietHours()`, `isRestHours()` (11 PM - 8 AM), curled sleep posture |
+| **Hydration Pill & Tracking** | [`HydrationWaterPill.tsx`](file:///c:/Users/Rachel/Documents/apps/hopi/src/features/companion/HydrationWaterPill.tsx), [`useCompanionMood.ts`](file:///c:/Users/Rachel/Documents/apps/hopi/src/features/companion/useCompanionMood.ts) | `recordWater()`, `dailyWaterGoal`, thirst hours, midnight rollover |
+| **Today & Upcoming Views** | [`TodayRemindersView.tsx`](file:///c:/Users/Rachel/Documents/apps/hopi/src/features/reminders/components/TodayRemindersView.tsx), [`UpcomingTasksView.tsx`](file:///c:/Users/Rachel/Documents/apps/hopi/src/features/reminders/components/UpcomingTasksView.tsx) | Checklist items, routine vs task sections, confetti cheer trigger |
+| **Settings & Companion Selection** | [`SettingsView.tsx`](file:///c:/Users/Rachel/Documents/apps/hopi/src/features/settings/components/SettingsView.tsx), [`HydrationHistorySection.tsx`](file:///c:/Users/Rachel/Documents/apps/hopi/src/features/settings/components/HydrationHistorySection.tsx) | Avatar switch (Mochi, Pip, Snowdrop), target goal, 7-day history |
+
+
+---
+
 ## 3. Core Architectural & Security Invariants
 
 ### 1. Token Protection & Strict File Budgets
