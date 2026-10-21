@@ -1,13 +1,28 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import type { MochiState } from './MochiAvatar';
 import { calculateHydrationStatus, isWaterReminder } from '../../domain/reminders/hydration';
+import {
+  type WaterHistory,
+  DEFAULT_DAILY_WATER_GOAL,
+  getWaterForDate,
+  addWaterLog,
+  setWaterLog,
+  getTodayDateString,
+} from '../../domain/reminders/waterTracker';
 import { floatingOverlayService } from '../../services/nativeOverlay';
 import { companionPhrases } from '../../domain/companion/phrases';
 import type { Reminder } from '../reminders/types';
 
 const WATER_STORAGE_KEY = 'hopi_last_water_time';
+const WATER_HISTORY_KEY = 'hopi_water_history';
+const WATER_GOAL_KEY = 'hopi_water_goal';
 
-export function useCompanionMood(reminders: Reminder[], onCheer?: () => void, companionName = 'Mochi') {
+export function useCompanionMood(
+  reminders: Reminder[],
+  onCheer?: () => void,
+  companionName = 'Mochi',
+  onWaterLogged?: (newCount: number) => void
+) {
   const [overrideState, setOverrideState] = useState<MochiState | null>(null);
   const [customPhrase, setCustomPhrase] = useState<string | null>(null);
   const [isManualAwake, setIsManualAwake] = useState(false);
@@ -20,6 +35,28 @@ export function useCompanionMood(reminders: Reminder[], onCheer?: () => void, co
     cal.setHours(8, 0, 0, 0);
     return cal.getTime() <= Date.now() ? cal.getTime() : cal.getTime() - 86400000;
   });
+
+  const [waterHistory, setWaterHistory] = useState<WaterHistory>(() => {
+    try {
+      const saved = localStorage.getItem(WATER_HISTORY_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {};
+  });
+
+  const [dailyWaterGoal, setDailyWaterGoal] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(WATER_GOAL_KEY);
+      if (saved) return Number(saved);
+    } catch {}
+    return DEFAULT_DAILY_WATER_GOAL;
+  });
+
+  const todayDateStr = getTodayDateString();
+  const todayWaterCount = useMemo(
+    () => getWaterForDate(waterHistory, todayDateStr),
+    [waterHistory, todayDateStr]
+  );
 
   useEffect(() => {
     const syncNative = async () => {
@@ -76,20 +113,50 @@ export function useCompanionMood(reminders: Reminder[], onCheer?: () => void, co
     return companionPhrases.getPhrase(hoursSinceDrink, isRestHours, new Date().getHours(), companionName);
   }, [customPhrase, currentMood, isRestHours, isManualAwake, hoursSinceDrink, companionName]);
 
-  const recordWater = useCallback(() => {
+  const recordWater = useCallback((amount: number = 1) => {
     const now = Date.now();
     setLastWaterTime(now);
     try { localStorage.setItem(WATER_STORAGE_KEY, String(now)); } catch {}
+
+    const todayKey = getTodayDateString();
+    let updatedCount = 1;
+    setWaterHistory((prev) => {
+      const next = addWaterLog(prev, todayKey, amount);
+      try { localStorage.setItem(WATER_HISTORY_KEY, JSON.stringify(next)); } catch {}
+      updatedCount = getWaterForDate(next, todayKey);
+      if (updatedCount >= dailyWaterGoal && getWaterForDate(prev, todayKey) < dailyWaterGoal) {
+        setCustomPhrase(`Goal reached! ${updatedCount}/${dailyWaterGoal} glasses today ✨`);
+      } else {
+        setCustomPhrase(`Water logged! ${updatedCount}/${dailyWaterGoal} glasses today 💧`);
+      }
+      return next;
+    });
+
     setOverrideState('cheer');
-    setCustomPhrase('Water logged! Thank you for hydrating 💧');
     onCheer?.();
     floatingOverlayService.recordWaterIntake();
-    setTimeout(() => { setOverrideState(null); setCustomPhrase(null); }, 3000);
-  }, [onCheer]);
+    onWaterLogged?.(updatedCount);
+    setTimeout(() => { setOverrideState(null); setCustomPhrase(null); }, 3200);
+  }, [onCheer, onWaterLogged, dailyWaterGoal]);
+
+  const updateDailyGoal = useCallback((goal: number) => {
+    const safe = Math.max(1, Math.min(24, Math.round(goal)));
+    setDailyWaterGoal(safe);
+    try { localStorage.setItem(WATER_GOAL_KEY, String(safe)); } catch {}
+  }, []);
+
+  const updateTodayWater = useCallback((glasses: number) => {
+    const todayKey = getTodayDateString();
+    setWaterHistory((prev) => {
+      const next = setWaterLog(prev, todayKey, glasses);
+      try { localStorage.setItem(WATER_HISTORY_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, []);
 
   const interactMochi = useCallback(() => {
     if (hydrationLevel !== 'hydrated' || hasOverdueWater) {
-      recordWater();
+      recordWater(1);
       return;
     }
     if (currentMood === 'sleep') {
@@ -106,5 +173,16 @@ export function useCompanionMood(reminders: Reminder[], onCheer?: () => void, co
     setTimeout(() => { setOverrideState(null); setCustomPhrase(null); }, 3500);
   }, [currentMood, hydrationLevel, hasOverdueWater, recordWater, hoursSinceDrink, isRestHours, companionName]);
 
-  return { currentMood, statusText, hydrationLevel, recordWater, interactMochi };
+  return {
+    currentMood,
+    statusText,
+    hydrationLevel,
+    todayWaterCount,
+    dailyWaterGoal,
+    waterHistory,
+    recordWater,
+    interactMochi,
+    updateDailyGoal,
+    updateTodayWater,
+  };
 }

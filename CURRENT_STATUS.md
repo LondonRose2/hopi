@@ -11,26 +11,30 @@ _Last updated: 2026-10-19 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 
 ## 📍 Where we are
 - **GitHub Repository:** [`https://github.com/LondonRose2/hopi`](https://github.com/LondonRose2/hopi) (pushed & tracked on `master`).
-- **Release APK Built (v1.1.2):**
+- **Release APK Built (v1.1.3):**
   - **Local Wi-Fi Browser Link (Mobile Chrome):** [`http://192.168.0.103:8088/`](http://192.168.0.103:8088/) or direct download at [`http://192.168.0.103:8088/hopi.apk`](http://192.168.0.103:8088/hopi.apk)
-  - **GitHub Direct Download Link:** [`https://github.com/LondonRose2/hopi/releases/download/v1.1.2/hopi.apk`](https://github.com/LondonRose2/hopi/releases/download/v1.1.2/hopi.apk)
-  - **GitHub Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.1.2`](https://github.com/LondonRose2/hopi/releases/tag/v1.1.2)
+  - **GitHub Direct Download Link:** [`https://github.com/LondonRose2/hopi/releases/download/v1.1.3/hopi.apk`](https://github.com/LondonRose2/hopi/releases/download/v1.1.3/hopi.apk)
+  - **GitHub Release Page:** [`https://github.com/LondonRose2/hopi/releases/tag/v1.1.3`](https://github.com/LondonRose2/hopi/releases/tag/v1.1.3)
   - **Local File Path:** `release/hopi.apk` (12.01 MB, built today).
 - **Features Included:**
-  - **Hydration Logging & Companion Happiness Sync:**
-    - Dedicated "💧 I drank water" button in the companion card.
-    - Direct tap on the thirsty/sad avatar or bubble immediately logs hydration, displays wave animation, and plays joyous celebration.
-    - Two-way hydration sync between React app and Android native floating service (`FloatingMochiService`).
+  - **Daily Water Intake Counter & Midnight Auto-Reset:**
+    - Live daily counter under avatar (`💧 4 / 8 glasses today`) with micro progress bar.
+    - Quick-tap `+1 Glass` logs intake, resets companion thirst clock to 0.0h, and auto-completes overdue water reminders.
+    - Day-by-day automatic rollover at midnight with full history preservation.
+  - **Day-by-Day Hydration History & Goal Customization:**
+    - Dedicated Settings card with customizable daily target (`6`, `8`, `10`, `12` glasses).
+    - Past 7 days hydration log showing date, glasses, ounces, and goal achievement badges.
+    - Quick +/- controls for adjusting today's count manually.
+  - **Eliminated Idle "Hiccups" / Bouncing:**
+    - Fixed canvas scaling to ground sprites at a constant bottom baseline so feet/body remain completely steady.
+    - Calmed idle pacing to 4.5s–7.5s peaceful still rest with soft, natural eye blinks.
+    - Matched calm resting pacing in Android floating overlay (`FloatingMochiService`).
   - **Custom Repeating Hourly Routines (`Every X hrs`):**
-    - Configurable interval selector from 1 to 12 hours.
-    - Canonical next-occurrence calculation in `src/domain/reminders/recurrence.ts` automatically advances due time by `intervalHours` upon check-off.
-    - Natural language voice parser supports phrases like "take vitamins every 4 hours".
+    - Configurable interval selector from 1 to 12 hours with automated due time advancement.
   - **Microphone Long-Press & Voice Recording Engine:**
     - Android 11+ package visibility declared via `<queries>` with `android.speech.RecognitionService`.
-    - Proactive runtime `android.permission.RECORD_AUDIO` request handled smoothly via `FloatingMochiPlugin` and `useOverlayCompanion`.
-    - Helpful speech bubble guidance if microphone permission is not yet granted ("Mic permission needed! Tap here to open Hopi 🎙️").
-    - Tapping "tap to retry" or "Mic ready" in the speech bubble directly restarts voice listening.
-    - Clean recognizer reset and error handling for `ERROR_RECOGNIZER_BUSY`, `ERROR_INSUFFICIENT_PERMISSIONS`, and network timeouts.
+    - Proactive runtime `android.permission.RECORD_AUDIO` request handled smoothly via `FloatingMochiPlugin`.
+    - 1-tap retry directly on speech bubble (`"Didn't catch that. Tap again to retry! 🐰"`).
   - **Organic, Non-Repetitive Idle & Blinking Engine:**
     - Replaced rapid 900ms linear frame cycling with natural resting posture (2.4s–5.2s peaceful still rest).
     - Varied realistic actions: single blinks (70ms/130ms), occasional double-blinks (20%), curious head tilts (10%), and sweet nose/paw grooming (10%).

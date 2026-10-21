@@ -55,17 +55,17 @@ export function MochiAvatar({
       const scheduleIdleAction = () => {
         if (!active) return;
         const roll = Math.random();
-        if (roll < 0.60) {
-          // Single natural blink
+        if (roll < 0.80) {
+          // Single natural blink (calm and brief)
           setCurrentFrame(frameSet.idle.blinkHalf);
           addTimeout(() => {
             setCurrentFrame(frameSet.idle.blinkClosed);
             addTimeout(() => {
               setCurrentFrame(frameSet.idle.still);
-              addTimeout(scheduleIdleAction, 2400 + Math.random() * 2600);
-            }, 130);
-          }, 70);
-        } else if (roll < 0.80) {
+              addTimeout(scheduleIdleAction, 4500 + Math.random() * 3200);
+            }, 110);
+          }, 60);
+        } else {
           // Double blink
           setCurrentFrame(frameSet.idle.blinkClosed);
           addTimeout(() => {
@@ -74,27 +74,13 @@ export function MochiAvatar({
               setCurrentFrame(frameSet.idle.blinkClosed);
               addTimeout(() => {
                 setCurrentFrame(frameSet.idle.still);
-                addTimeout(scheduleIdleAction, 2600 + Math.random() * 2800);
-              }, 110);
-            }, 90);
-          }, 120);
-        } else if (roll < 0.90) {
-          // Curious head tilt
-          setCurrentFrame(frameSet.idle.curious);
-          addTimeout(() => {
-            setCurrentFrame(frameSet.idle.still);
-            addTimeout(scheduleIdleAction, 2800 + Math.random() * 2400);
-          }, 650);
-        } else {
-          // Gentle groom / sniff
-          setCurrentFrame(frameSet.idle.sniff);
-          addTimeout(() => {
-            setCurrentFrame(frameSet.idle.still);
-            addTimeout(scheduleIdleAction, 2800 + Math.random() * 2400);
-          }, 650);
+                addTimeout(scheduleIdleAction, 4800 + Math.random() * 3500);
+              }, 90);
+            }, 70);
+          }, 90);
         }
       };
-      addTimeout(scheduleIdleAction, 2200 + Math.random() * 1500);
+      addTimeout(scheduleIdleAction, 3500 + Math.random() * 2000);
     } else if (state === 'sleep') {
       setCurrentFrame(frameSet.sleep.still);
       const scheduleSleepCycle = () => {
@@ -120,7 +106,7 @@ export function MochiAvatar({
     return () => { active = false; timeouts.forEach(clearTimeout); };
   }, [state, frameSet]);
 
-  // Canvas drawer
+  // Canvas drawer with fixed baseline anchoring (no bouncing or scaling shifts)
   useEffect(() => {
     const canvas = canvasRef.current;
     const img = imgRef.current;
@@ -135,10 +121,14 @@ export function MochiAvatar({
     ctx.clearRect(0, 0, size, size);
     ctx.imageSmoothingEnabled = false;
 
-    const scale = Math.min((size * 0.92) / currentFrame.sw, (size * 0.92) / currentFrame.sh);
+    // Anchor with fixed reference scale and bottom ground alignment
+    const refH = 84;
+    const scale = (size * 0.90) / refH;
     const dw = currentFrame.sw * scale;
     const dh = currentFrame.sh * scale;
-    ctx.drawImage(img, currentFrame.sx, currentFrame.sy, currentFrame.sw, currentFrame.sh, (size - dw) / 2, (size - dh) / 2, dw, dh);
+    const dx = (size - dw) / 2;
+    const dy = (size - dh); // Pinned to bottom baseline so body never jumps
+    ctx.drawImage(img, currentFrame.sx, currentFrame.sy, currentFrame.sw, currentFrame.sh, dx, dy, dw, dh);
   }, [currentFrame, loaded, size]);
 
   const handlePointerDown = () => {

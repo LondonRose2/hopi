@@ -6,3 +6,4 @@ export * from './defaultData';
 export * from './hydration';
 export * from './voiceParser';
 export * from './recurrence';
+export * from './waterTracker';

@@ -3,6 +3,7 @@ import { Plus, Settings as SettingsIcon, ArrowLeft } from 'lucide-react';
 import { MochiAvatar } from '../features/companion/MochiAvatar';
 import { useOverlayCompanion } from '../features/companion/useOverlayCompanion';
 import { useCompanionMood } from '../features/companion/useCompanionMood';
+import { HydrationWaterPill } from '../features/companion/HydrationWaterPill';
 import { OverlayPermissionPrompt } from '../features/companion/OverlayPermissionPrompt';
 import { ConfettiCelebration } from '../features/reminders/components/ConfettiCelebration';
 import { TodayRemindersView } from '../features/reminders/components/TodayRemindersView';
@@ -23,10 +24,10 @@ export function App() {
   const triggerCheer = useCallback(() => setConfettiKey((k) => k + 1), []);
   const onWaterLoggedRef = useRef<() => void>(() => {});
   const handleWaterLogged = useCallback(() => onWaterLoggedRef.current(), []);
-  const { reminders, handleToggle, handleSave, handleDelete } = useReminders(triggerCheer, handleWaterLogged);
+  const { reminders, handleToggle, handleSave, handleDelete, completeOverdueWaterReminders } = useReminders(triggerCheer, handleWaterLogged);
   const overlay = useOverlayCompanion({ enabled: settings.floatingCompanion });
-  const companion = useCompanionMood(reminders, triggerCheer, companionName);
-  onWaterLoggedRef.current = companion.recordWater;
+  const companion = useCompanionMood(reminders, triggerCheer, companionName, completeOverdueWaterReminders);
+  onWaterLoggedRef.current = () => companion.recordWater(1);
   const todayStr = getTodayDateString();
   const todayReminders = reminders.filter((r) => r.date <= todayStr);
   const upcomingReminders = reminders.filter((r) => r.date > todayStr);
@@ -36,29 +37,9 @@ export function App() {
       <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#2D2721]/30 via-[#2D2721]/10 to-transparent pointer-events-none z-0" />
       <ConfettiCelebration triggerKey={confettiKey} />
       <div className="pt-safe pt-8 pb-3 flex flex-col items-center text-center select-none z-10">
-        <MochiAvatar
-          avatar={settings.avatarChoice}
-          state={companion.currentMood}
-          size={110}
-          onClick={companion.interactMochi}
-          title={companionName}
-        />
-        <p className="text-xs font-semibold text-warm-600 mt-1 tracking-wide">
-          {tab === 'settings' ? 'Companion Settings' : companion.statusText}
-        </p>
-        {tab !== 'settings' && (
-          <button
-            onClick={companion.recordWater}
-            className={`mt-1.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all shadow-sm ${
-              companion.hydrationLevel !== 'hydrated'
-                ? 'bg-sky-500 hover:bg-sky-600 text-white animate-pulse'
-                : 'bg-warm-100 hover:bg-warm-200 text-warm-700'
-            }`}
-            title="Log water intake"
-          >
-            💧 {companion.hydrationLevel !== 'hydrated' ? 'I drank water' : 'Log water'}
-          </button>
-        )}
+        <MochiAvatar avatar={settings.avatarChoice} state={companion.currentMood} size={110} onClick={companion.interactMochi} title={companionName} />
+        <p className="text-xs font-semibold text-warm-600 mt-1 tracking-wide">{tab === 'settings' ? 'Companion Settings' : companion.statusText}</p>
+        {tab !== 'settings' && <HydrationWaterPill count={companion.todayWaterCount} goal={companion.dailyWaterGoal} hydrationLevel={companion.hydrationLevel} onLogWater={() => companion.recordWater(1)} />}
       </div>
 
       <main className="w-full max-w-lg h-[78vh] bg-white rounded-t-[2.2rem] border-t border-x border-[#EAE2D5] shadow-sheet flex flex-col overflow-hidden z-20">
@@ -89,7 +70,7 @@ export function App() {
           {overlay.showPrompt && <OverlayPermissionPrompt onRequestPermission={overlay.requestPermission} onDismiss={overlay.dismissPrompt} />}
           {tab === 'today' && <TodayRemindersView reminders={todayReminders} onToggle={handleToggle} onSelect={(r) => { setActiveItem(r); setModalOpen(true); }} />}
           {tab === 'upcoming' && <UpcomingTasksView reminders={upcomingReminders} onToggle={handleToggle} onSelect={(r) => { setActiveItem(r); setModalOpen(true); }} />}
-          {tab === 'settings' && <SettingsView settings={settings} onUpdate={(u) => setSettings((s) => ({ ...s, ...u }))} />}
+          {tab === 'settings' && <SettingsView settings={settings} onUpdate={(u) => setSettings((s) => ({ ...s, ...u }))} waterHistory={companion.waterHistory} dailyWaterGoal={companion.dailyWaterGoal} todayWaterCount={companion.todayWaterCount} onUpdateWaterGoal={companion.updateDailyGoal} onAdjustTodayWater={(d) => companion.updateTodayWater(companion.todayWaterCount + d)} />}
         </div>
       </main>
 

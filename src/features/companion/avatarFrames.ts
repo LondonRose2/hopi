@@ -29,7 +29,7 @@ export interface AvatarFrameSet {
 export const MOCHI_FRAMES: AvatarFrameSet = {
   idle: {
     still: { sx: 2, sy: 7, sw: 81, sh: 79 },
-    blinkHalf: { sx: 89, sy: 7, sw: 80, sh: 79 },
+    blinkHalf: { sx: 89, sy: 7, sw: 81, sh: 79 },
     blinkClosed: { sx: 174, sy: 7, sw: 81, sh: 79 },
     curious: { sx: 87, sy: 748, sw: 83, sh: 86 },
     sniff: { sx: 87, sy: 658, sw: 83, sh: 80 },

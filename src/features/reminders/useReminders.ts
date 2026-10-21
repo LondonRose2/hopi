@@ -118,10 +118,34 @@ export function useReminders(onCheer?: () => void, onWaterLogged?: () => void) {
     floatingOverlayService.cancelReminder(id);
   }, [persist]);
 
+  const completeOverdueWaterReminders = useCallback(() => {
+    setReminders((prev) => {
+      let changed = false;
+      const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+      const updated = prev.map((r) => {
+        if (r.completed || !isWaterReminder(r.title, r.emoji)) return r;
+        const match = r.time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+        if (!match) return r;
+        let h = parseInt(match[1], 10);
+        const m = parseInt(match[2], 10);
+        if (match[3]?.toUpperCase() === 'PM' && h < 12) h += 12;
+        if (match[3]?.toUpperCase() === 'AM' && h === 12) h = 0;
+        if ((h * 60 + m) <= (nowMinutes + 15)) {
+          changed = true;
+          return { ...r, completed: true };
+        }
+        return r;
+      });
+      if (changed) persist(updated);
+      return changed ? updated : prev;
+    });
+  }, [persist]);
+
   return {
     reminders,
     handleToggle,
     handleSave,
     handleDelete,
+    completeOverdueWaterReminders,
   };
 }

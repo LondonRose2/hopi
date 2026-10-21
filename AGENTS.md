@@ -43,11 +43,12 @@ hopi/
         MochiAvatar.tsx             # Sprite animator (idle, wave, sleep, cheer, sad) (<200 lines)
         avatarFrames.ts             # Dynamic sprite sheets & frame configs (Mochi, Pip, Snowdrop) (<150 lines)
         OverlayPermissionPrompt.tsx # Gentle permission onboarding card (<100 lines)
+        HydrationWaterPill.tsx      # Daily water counter, goal tracker & quick-log (<100 lines)
         useOverlayCompanion.ts      # Permission state & auto-sync hook (<100 lines)
-        useCompanionMood.ts         # Companion mood, hydration & sleep state orchestrator (<100 lines)
+        useCompanionMood.ts         # Companion mood, hydration & sleep state orchestrator (<200 lines)
       reminders/
         types.ts            # Reminder domain contracts & sample routines
-        useReminders.ts     # Persistence, reminder scheduling & water intake (<100 lines)
+        useReminders.ts     # Persistence, reminder scheduling & water intake (<200 lines)
         components/
           ConfettiCelebration.tsx # Front-layer canvas burst (z-99999) (<200 lines)
           ReminderItem.tsx        # Pill card row with 1-tap check-off (<200 lines)
@@ -59,11 +60,12 @@ hopi/
       settings/
         types.ts        # Companion preferences & sleep schedule contracts
         components/
-          SettingsView.tsx        # Sleep schedule & companion preferences (<100 lines)
+          SettingsView.tsx            # Sleep schedule & companion preferences (<150 lines)
+          HydrationHistorySection.tsx # 7-day hydration history list & target goal (<150 lines)
     domain/
       companion/
         phrases.ts      # 50+ diverse non-repeating phrases & selector engine (<150 lines)
-      reminders/        # Pure domain calculations (schemas, grouping, sleep schedule, hydration, voiceParser, recurrence)
+      reminders/        # Pure domain calculations (schemas, grouping, sleep schedule, hydration, waterTracker, recurrence)
     services/
       nativeOverlay.ts  # Bridge to Android native floating overlay & alarms (<100 lines)
   android/

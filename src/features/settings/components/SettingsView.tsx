@@ -1,10 +1,17 @@
 import { Moon, Sparkles, Bell, Layers } from 'lucide-react';
 import { type AppSettings, normalizeAvatar, getCompanionName } from '../types';
 import { floatingOverlayService } from '../../../services/nativeOverlay';
+import { HydrationHistorySection } from './HydrationHistorySection';
+import type { WaterHistory } from '../../../domain/reminders/waterTracker';
 
 interface SettingsViewProps {
   settings: AppSettings;
   onUpdate: (newSettings: Partial<AppSettings>) => void;
+  waterHistory?: WaterHistory;
+  dailyWaterGoal?: number;
+  todayWaterCount?: number;
+  onUpdateWaterGoal?: (goal: number) => void;
+  onAdjustTodayWater?: (delta: number) => void;
 }
 
 const AVATAR_OPTIONS = [
@@ -13,7 +20,15 @@ const AVATAR_OPTIONS = [
   { id: 'snowdrop', label: '🐇 Snowdrop', sub: 'Bunny' },
 ] as const;
 
-export function SettingsView({ settings, onUpdate }: SettingsViewProps) {
+export function SettingsView({
+  settings,
+  onUpdate,
+  waterHistory = {},
+  dailyWaterGoal = 8,
+  todayWaterCount = 0,
+  onUpdateWaterGoal = () => {},
+  onAdjustTodayWater = () => {},
+}: SettingsViewProps) {
   const companionName = getCompanionName(settings.avatarChoice);
 
   const toggleRow = (label: string, desc: string, icon: React.ReactNode, value: boolean, key: keyof AppSettings) => (
@@ -75,6 +90,15 @@ export function SettingsView({ settings, onUpdate }: SettingsViewProps) {
           })}
         </div>
       </div>
+
+      {/* Daily Hydration History & Goal */}
+      <HydrationHistorySection
+        history={waterHistory}
+        goal={dailyWaterGoal}
+        todayCount={todayWaterCount}
+        onUpdateGoal={onUpdateWaterGoal}
+        onAdjustToday={onAdjustTodayWater}
+      />
 
       {/* Sleep Mode Hours */}
       <div className="p-4 bg-white rounded-pebble border border-[#EAE2D5] shadow-pebble space-y-2.5">

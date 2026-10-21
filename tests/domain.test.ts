@@ -693,5 +693,58 @@ describe('hydration & companion mood domain logic', () => {
       expect(next.date).toBe('2026-10-19');
     });
   });
+
+  describe('Water Tracker & Daily Hydration History', () => {
+    it('returns 0 glasses when no entry exists for the date', async () => {
+      const { getWaterForDate } = await import('../src/domain/reminders/waterTracker');
+      expect(getWaterForDate({}, '2026-10-21')).toBe(0);
+      expect(getWaterForDate({ '2026-10-20': 5 }, '2026-10-21')).toBe(0);
+    });
+
+    it('adds water glasses to the specified day', async () => {
+      const { addWaterLog, getWaterForDate } = await import('../src/domain/reminders/waterTracker');
+      let history = {};
+      history = addWaterLog(history, '2026-10-21', 1);
+      expect(getWaterForDate(history, '2026-10-21')).toBe(1);
+
+      history = addWaterLog(history, '2026-10-21', 2);
+      expect(getWaterForDate(history, '2026-10-21')).toBe(3);
+    });
+
+    it('sets exact water amount without going negative', async () => {
+      const { setWaterLog, getWaterForDate } = await import('../src/domain/reminders/waterTracker');
+      let history = setWaterLog({}, '2026-10-21', 6);
+      expect(getWaterForDate(history, '2026-10-21')).toBe(6);
+
+      history = setWaterLog(history, '2026-10-21', -3);
+      expect(getWaterForDate(history, '2026-10-21')).toBe(0);
+    });
+
+    it('generates past N days of logs with goal status and friendly labels', async () => {
+      const { getPastDaysWaterLogs } = await import('../src/domain/reminders/waterTracker');
+      const history = {
+        '2026-10-21': 8,
+        '2026-10-20': 6,
+        '2026-10-19': 9,
+      };
+      const logs = getPastDaysWaterLogs(history, '2026-10-21', 3, 8);
+      expect(logs.length).toBe(3);
+
+      expect(logs[0].date).toBe('2026-10-21');
+      expect(logs[0].displayDate).toBe('Today');
+      expect(logs[0].glasses).toBe(8);
+      expect(logs[0].goalMet).toBe(true);
+
+      expect(logs[1].date).toBe('2026-10-20');
+      expect(logs[1].displayDate).toBe('Yesterday');
+      expect(logs[1].glasses).toBe(6);
+      expect(logs[1].goalMet).toBe(false);
+
+      expect(logs[2].date).toBe('2026-10-19');
+      expect(logs[2].displayDate).toBe('Oct 19');
+      expect(logs[2].glasses).toBe(9);
+      expect(logs[2].goalMet).toBe(true);
+    });
+  });
 });
 

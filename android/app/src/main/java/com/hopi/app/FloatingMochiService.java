@@ -278,27 +278,25 @@ public class FloatingMochiService extends Service {
                 if (currentIdleAction == 0) {
                     mochiImage.setImageResource(idleFrames[0]);
                     double roll = Math.random();
-                    if (roll < 0.60) currentIdleAction = 1; // single blink
-                    else if (roll < 0.80) currentIdleAction = 2; // double blink
-                    else if (roll < 0.90) currentIdleAction = 3; // curious tilt
-                    else currentIdleAction = 4; // groom / sniff
+                    if (roll < 0.80) currentIdleAction = 1; // single blink
+                    else currentIdleAction = 2; // double blink
                     idleActionStep = 0;
-                    animHandler.postDelayed(this, 2400 + (int)(Math.random() * 2600));
+                    animHandler.postDelayed(this, 4500 + (int)(Math.random() * 3200));
                     return;
                 } else if (currentIdleAction == 1) {
-                    // Single natural blink
+                    // Single natural blink (calm and quick)
                     if (idleActionStep == 0) {
                         mochiImage.setImageResource(idleFrames.length > 1 ? idleFrames[1] : idleFrames[0]);
                         idleActionStep = 1;
-                        animHandler.postDelayed(this, 70);
+                        animHandler.postDelayed(this, 60);
                     } else if (idleActionStep == 1) {
                         mochiImage.setImageResource(idleFrames.length > 2 ? idleFrames[2] : idleFrames[0]);
                         idleActionStep = 2;
-                        animHandler.postDelayed(this, 130);
+                        animHandler.postDelayed(this, 110);
                     } else {
                         mochiImage.setImageResource(idleFrames[0]);
                         currentIdleAction = 0;
-                        animHandler.postDelayed(this, 2400 + (int)(Math.random() * 2600));
+                        animHandler.postDelayed(this, 4500 + (int)(Math.random() * 3200));
                     }
                     return;
                 } else if (currentIdleAction == 2) {
@@ -306,43 +304,19 @@ public class FloatingMochiService extends Service {
                     if (idleActionStep == 0) {
                         mochiImage.setImageResource(idleFrames.length > 2 ? idleFrames[2] : idleFrames[0]);
                         idleActionStep = 1;
-                        animHandler.postDelayed(this, 120);
+                        animHandler.postDelayed(this, 90);
                     } else if (idleActionStep == 1) {
                         mochiImage.setImageResource(idleFrames[0]);
                         idleActionStep = 2;
-                        animHandler.postDelayed(this, 90);
+                        animHandler.postDelayed(this, 70);
                     } else if (idleActionStep == 2) {
                         mochiImage.setImageResource(idleFrames.length > 2 ? idleFrames[2] : idleFrames[0]);
                         idleActionStep = 3;
-                        animHandler.postDelayed(this, 110);
+                        animHandler.postDelayed(this, 90);
                     } else {
                         mochiImage.setImageResource(idleFrames[0]);
                         currentIdleAction = 0;
-                        animHandler.postDelayed(this, 2600 + (int)(Math.random() * 2600));
-                    }
-                    return;
-                } else if (currentIdleAction == 3) {
-                    // Curious head tilt
-                    if (idleActionStep == 0) {
-                        mochiImage.setImageResource(getCuriousFrame());
-                        idleActionStep = 1;
-                        animHandler.postDelayed(this, 650);
-                    } else {
-                        mochiImage.setImageResource(idleFrames[0]);
-                        currentIdleAction = 0;
-                        animHandler.postDelayed(this, 2600 + (int)(Math.random() * 2400));
-                    }
-                    return;
-                } else {
-                    // Groom / sniff
-                    if (idleActionStep == 0) {
-                        mochiImage.setImageResource(getGroomFrame());
-                        idleActionStep = 1;
-                        animHandler.postDelayed(this, 650);
-                    } else {
-                        mochiImage.setImageResource(idleFrames[0]);
-                        currentIdleAction = 0;
-                        animHandler.postDelayed(this, 2600 + (int)(Math.random() * 2400));
+                        animHandler.postDelayed(this, 4800 + (int)(Math.random() * 3500));
                     }
                     return;
                 }
