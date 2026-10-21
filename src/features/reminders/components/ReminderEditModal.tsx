@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Trash2, Clock, Calendar, CheckSquare, RefreshCw } from 'lucide-react';
+import { X, Trash2, Clock, Calendar, CheckSquare, RefreshCw, Mic } from 'lucide-react';
 import type { Reminder, RecurringType, ItemType } from '../types';
-import { EMOJI_OPTIONS, to24Hour, to12Hour, getTodayDateString } from '../types';
+import { to24Hour, to12Hour, getTodayDateString } from '../types';
+import { EmojiGrid } from './EmojiGrid';
+import { floatingOverlayService } from '../../../services/nativeOverlay';
+import { parseVoiceInput } from '../../../domain/reminders/voiceParser';
 
 interface ReminderEditModalProps {
   isOpen: boolean;
@@ -25,7 +28,27 @@ export function ReminderEditModal({
   const [itemType, setItemType] = useState<ItemType>('task');
   const [recurring, setRecurring] = useState<RecurringType>('none');
   const [repeatIntervalHours, setRepeatIntervalHours] = useState<number>(2);
+  const [isListening, setIsListening] = useState(false);
   const timeInputRef = useRef<HTMLInputElement>(null);
+
+  const handleVoiceFill = async () => {
+    setIsListening(true);
+    try {
+      const res = await floatingOverlayService.promptSpeechInput();
+      if (res.success && res.transcript) {
+        const parsed = parseVoiceInput(res.transcript);
+        if (parsed.title) setTitle(parsed.title);
+        if (parsed.emoji) setEmoji(parsed.emoji);
+        if (parsed.time) setTime(parsed.time);
+        if (parsed.date) setDate(parsed.date);
+        if (parsed.itemType) setItemType(parsed.itemType);
+        if (parsed.recurring) setRecurring(parsed.recurring);
+        if (parsed.repeatIntervalHours) setRepeatIntervalHours(parsed.repeatIntervalHours);
+      }
+    } finally {
+      setIsListening(false);
+    }
+  };
 
   useEffect(() => {
     if (initialReminder) {
@@ -52,11 +75,7 @@ export function ReminderEditModal({
 
   const handleTypeChange = (type: ItemType) => {
     setItemType(type);
-    if (type === 'routine' && recurring === 'none') {
-      setRecurring('daily');
-    } else if (type === 'task') {
-      setRecurring('none');
-    }
+    setRecurring(type === 'routine' ? (recurring === 'none' ? 'daily' : recurring) : 'none');
   };
 
   const handleTimeClick = () => {
@@ -65,12 +84,8 @@ export function ReminderEditModal({
     try {
       if (typeof (el as HTMLInputElement & { showPicker?: () => void }).showPicker === 'function') {
         (el as HTMLInputElement & { showPicker: () => void }).showPicker();
-      } else {
-        el.focus();
-      }
-    } catch {
-      el.focus();
-    }
+      } else { el.focus(); }
+    } catch { el.focus(); }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -138,7 +153,22 @@ export function ReminderEditModal({
 
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
-            <label className="block text-xs font-medium text-warm-600 mb-1">Item Title</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-medium text-warm-600">Item Title</label>
+              <button
+                type="button"
+                onClick={handleVoiceFill}
+                disabled={isListening}
+                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border transition-all ${
+                  isListening
+                    ? 'bg-terracotta text-white border-terracotta animate-pulse'
+                    : 'bg-warm-100 hover:bg-warm-200 text-warm-700 border-warm-200 shadow-xs'
+                }`}
+              >
+                <Mic className="w-3 h-3" />
+                <span>{isListening ? 'Listening...' : 'Voice Fill'}</span>
+              </button>
+            </div>
             <input
               type="text"
               required
@@ -149,23 +179,7 @@ export function ReminderEditModal({
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-warm-600 mb-1">Choose Icon</label>
-            <div className="grid grid-cols-7 sm:grid-cols-9 gap-1.5 max-h-32 overflow-y-auto p-1.5 rounded-xl border border-warm-200 bg-warm-50/40">
-              {EMOJI_OPTIONS.map((item) => (
-                <button
-                  type="button"
-                  key={item}
-                  onClick={() => setEmoji(item)}
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-transform ${
-                    emoji === item ? 'bg-terracotta-soft border-2 border-terracotta scale-105' : 'bg-white border border-warm-200 hover:bg-warm-100'
-                  }`}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-          </div>
+          <EmojiGrid selected={emoji} onSelect={setEmoji} />
 
           <div className="grid grid-cols-2 gap-3">
             {/* Native Clock Selector */}
@@ -260,19 +274,11 @@ export function ReminderEditModal({
 
           <div className="flex items-center gap-3 pt-3 pb-6 sm:pb-2">
             {initialReminder && onDelete && (
-              <button
-                type="button"
-                onClick={() => { onDelete(initialReminder.id); onClose(); }}
-                className="p-3 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition-colors"
-                title="Delete item"
-              >
+              <button type="button" onClick={() => { onDelete(initialReminder.id); onClose(); }} className="p-3 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition-colors" title="Delete item">
                 <Trash2 className="w-4 h-4" />
               </button>
             )}
-            <button
-              type="submit"
-              className="flex-1 py-3 px-4 rounded-xl bg-terracotta hover:bg-terracotta-hover text-white text-xs font-semibold tracking-wide shadow-md transition-all active:scale-[0.99]"
-            >
+            <button type="submit" className="flex-1 py-3 px-4 rounded-xl bg-terracotta hover:bg-terracotta-hover text-white text-xs font-semibold tracking-wide shadow-md transition-all active:scale-[0.99]">
               {initialReminder ? 'Save Changes' : 'Add Item'}
             </button>
           </div>

@@ -1,4 +1,5 @@
-import { Moon, Sparkles, Bell, Layers } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Moon, Sparkles, Bell, Layers, Mic } from 'lucide-react';
 import { type AppSettings, normalizeAvatar, getCompanionName } from '../types';
 import { floatingOverlayService } from '../../../services/nativeOverlay';
 import { HydrationHistorySection } from './HydrationHistorySection';
@@ -21,15 +22,15 @@ const AVATAR_OPTIONS = [
 ] as const;
 
 export function SettingsView({
-  settings,
-  onUpdate,
-  waterHistory = {},
-  dailyWaterGoal = 8,
-  todayWaterCount = 0,
-  onUpdateWaterGoal = () => {},
-  onAdjustTodayWater = () => {},
+  settings, onUpdate, waterHistory = {}, dailyWaterGoal = 8,
+  todayWaterCount = 0, onUpdateWaterGoal = () => {}, onAdjustTodayWater = () => {},
 }: SettingsViewProps) {
   const companionName = getCompanionName(settings.avatarChoice);
+  const [audioGranted, setAudioGranted] = useState(true);
+
+  useEffect(() => {
+    floatingOverlayService.isAudioPermissionGranted().then(setAudioGranted);
+  }, []);
 
   const toggleRow = (label: string, desc: string, icon: React.ReactNode, value: boolean, key: keyof AppSettings) => (
     <div className="flex items-center justify-between p-3.5 bg-white rounded-pebble border border-[#EAE2D5] shadow-pebble">
@@ -41,18 +42,13 @@ export function SettingsView({
         </div>
       </div>
       <button
-        type="button"
-        role="switch"
-        aria-checked={value}
+        type="button" role="switch" aria-checked={value}
         onClick={async () => {
           const next = !value;
           if (key === 'floatingCompanion') {
             const isNative = floatingOverlayService.isNativePlatform();
-            if (next && isNative && !(await floatingOverlayService.isPermissionGranted())) {
-              await floatingOverlayService.requestPermission();
-            } else {
-              await floatingOverlayService.setEnabled(next);
-            }
+            if (next && isNative && !(await floatingOverlayService.isPermissionGranted())) await floatingOverlayService.requestPermission();
+            else await floatingOverlayService.setEnabled(next);
           }
           onUpdate({ [key]: next });
         }}
@@ -124,6 +120,28 @@ export function SettingsView({
         {toggleRow('Encouragements', 'Heartwarming micro-affirmations', <Sparkles className="w-4 h-4" />, settings.encouragements, 'encouragements')}
         {toggleRow('Gentle Notifications', 'Timely reminder alerts', <Bell className="w-4 h-4" />, settings.notifications, 'notifications')}
         {toggleRow('Floating Companion', `Keep ${companionName} visible over other apps`, <Layers className="w-4 h-4" />, settings.floatingCompanion, 'floatingCompanion')}
+        <div className="flex items-center justify-between p-3.5 bg-white rounded-pebble border border-[#EAE2D5] shadow-pebble">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-warm-100 flex items-center justify-center text-warm-600 shrink-0"><Mic className="w-4 h-4" /></div>
+            <div>
+              <p className="text-xs font-semibold text-warm-900">Voice Reminders</p>
+              <p className="text-[11px] text-warm-500">{audioGranted ? 'Microphone ready' : 'Tap to grant microphone access'}</p>
+            </div>
+          </div>
+          {!audioGranted ? (
+            <button
+              type="button"
+              onClick={async () => {
+                const granted = await floatingOverlayService.requestAudioPermission();
+                setAudioGranted(granted);
+                if (!granted) await floatingOverlayService.openAppSettings();
+              }}
+              className="px-3 py-1 rounded-full text-xs font-semibold bg-terracotta text-white shadow-xs"
+            >Enable</button>
+          ) : (
+            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">Active</span>
+          )}
+        </div>
       </div>
     </div>
   );

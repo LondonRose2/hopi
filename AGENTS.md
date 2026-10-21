@@ -56,7 +56,8 @@ hopi/
           TodayEmptyState.tsx           # Peaceful all-done placeholder (<50 lines)
           CompletedRemindersSection.tsx # Collapsible completed items list (<50 lines)
           UpcomingTasksView.tsx         # Date-sectioned forward agenda (<100 lines)
-          ReminderEditModal.tsx         # Native clock picker, task vs routine toggle & emoji grid (<200 lines)
+          ReminderEditModal.tsx         # Native clock picker, task vs routine toggle & voice fill (<300 lines)
+          EmojiGrid.tsx                 # Fast icon selector grid (<50 lines)
       settings/
         types.ts        # Companion preferences & sleep schedule contracts
         components/

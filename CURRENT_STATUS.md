@@ -1,6 +1,6 @@
 # Current Status — Hopi
 
-_Last updated: 2026-10-21 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)_
+_Last updated: 2026-10-22 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)_
 
 > **CRITICAL INSTRUCTION FOR ALL AI AGENTS:**
 > At the start of every new session, you **MUST read both this file (`CURRENT_STATUS.md`) and [`AGENTS.md`](file:///c:/Users/Rachel/Documents/apps/hopi/AGENTS.md)** before writing any code or proposing modifications.
@@ -11,14 +11,23 @@ _Last updated: 2026-10-21 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 
 ## 📍 Where we are
 - **GitHub Repository:** [`https://github.com/LondonRose2/hopi`](https://github.com/LondonRose2/hopi) (pushed & tracked on `master`).
-- **Release APK Built (v1.1.4):**
+- **Release APK Built (v1.1.5):**
   - **Local Wi-Fi Browser Link (Mobile Chrome):** [`http://192.168.0.103:8088/`](http://192.168.0.103:8088/) or direct download at [`http://192.168.0.103:8088/hopi.apk`](http://192.168.0.103:8088/hopi.apk)
   - **Local File Path:** `release/hopi.apk` (11.99 MB, built today).
 - **Features Included:**
+  - **Robust Microphone Input & Voice Recording Engine:**
+    - Fixed Android 14+ (targetSdk 36) background service restriction: declared `FOREGROUND_SERVICE_MICROPHONE` permission and `android:foregroundServiceType="specialUse|microphone"`.
+    - Added Google Search Box (`com.google.android.googlequicksearchbox`) and Google TTS (`com.google.android.tts`) to `<queries>` so Android does not block binding to the speech recognition service.
+    - Added `createOnDeviceSpeechRecognizer` on Android 12+ (API 31+) with fallback to `createSpeechRecognizer(getApplicationContext())`.
+    - Added `🎙️ Voice Task` button directly in the floating avatar's quick action menu for 1-tap voice access.
+    - Fixed long-press gesture threshold (`Math.hypot > touchSlop * 2.5f`) so thumb resting jitter does not cancel the voice listening trigger.
+    - Added in-app `🎙️ Voice Fill` button in `ReminderEditModal` using native `RecognizerIntent.ACTION_RECOGNIZE_SPEECH` and pure-domain `parseVoiceInput`.
+    - Added Voice Reminders status row in Settings with 1-tap direct access to Android App Settings if permission is denied.
   - **Quick Action Menu on Tap (No Background App Auto-Opening):**
-    - Single tap on floating companion displays a sleek 3-action floating menu (`💧 Log Water`, `📝 Add Task`, `🏠 Open Hopi`) with gentle scale-in animation and 6.5s auto-dismiss.
+    - Single tap on floating companion displays a sleek 4-action floating menu (`💧 Log Water`, `🎙️ Voice Task`, `📝 Add Task`, `🏠 Open Hopi`) with gentle scale-in animation and 6.5s auto-dismiss.
     - Eliminated background app auto-opening on tap.
     - Tapping `💧 Log Water` instantly logs water, triggers wave animation, and speaks companion celebration.
+    - Tapping `🎙️ Voice Task` immediately starts voice recording.
     - Tapping `📝 Add Task` deep-links directly into Hopi's task creation modal.
     - Tapping `🏠 Open Hopi` brings the main app to the foreground.
   - **Double Tap for Words of Encouragement & Waves:**
@@ -41,10 +50,6 @@ _Last updated: 2026-10-21 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
     - Matched calm resting pacing in Android floating overlay (`FloatingMochiService`).
   - **Custom Repeating Hourly Routines (`Every X hrs`):**
     - Configurable interval selector from 1 to 12 hours with automated due time advancement.
-  - **Microphone Long-Press & Voice Recording Engine:**
-    - Android 11+ package visibility declared via `<queries>` with `android.speech.RecognitionService`.
-    - Proactive runtime `android.permission.RECORD_AUDIO` request handled smoothly via `FloatingMochiPlugin`.
-    - 1-tap retry directly on speech bubble (`"Didn't catch that. Tap again to retry! 🐰"`).
   - **Three Selectable Companions:** Mochi (plush bunny), Pip (baby penguin), and Snowdrop (lop rabbit).
   - **Test & Type Health:**
     - 82 passing tests in Vitest (`npm.cmd test`).
@@ -84,6 +89,7 @@ _Last updated: 2026-10-21 · Repo: Local (`c:\Users\Rachel\Documents\apps\hopi`)
 ## 🗒️ History & Learnings
 | Date | What happened & What did we learn |
 |---|---|
+| 2026-10-22 | Fixed microphone input & voice reminder engine across Android & Web: (1) Fixed Android 14+ (targetSdk 36) background service audio restriction by adding `FOREGROUND_SERVICE_MICROPHONE` and `foregroundServiceType="specialUse|microphone"`; (2) Added Google Search Box and Google TTS package visibility to `<queries>`; (3) Added `createOnDeviceSpeechRecognizer` on Android 12+ and used `getApplicationContext()`; (4) Added `🎙️ Voice Task` button directly in the floating avatar quick menu; (5) Raised long-press movement threshold to prevent touch jitter cancellation; (6) Added in-app `🎙️ Voice Fill` in `ReminderEditModal` with pure-domain `parseVoiceInput`; (7) Added Settings permission status row with 1-tap App Settings redirect. Built v1.1.5 APK (11.99 MB). |
 | 2026-10-21 | Added 3-option quick menu on tap, double-tap reflections, and proactive overdue indicator: (1) Added 3-button quick menu (`💧 Log Water`, `📝 Add Task`, `🏠 Open Hopi`) with 6.5s auto-dismiss and stopped app auto-opening on tap; (2) Added double-tap trigger for grounded encouragement reflections and wave animation; (3) Added proactive overdue alert indicator badge (`mochiAlertDot` / terracotta dot) with `isReminderOverdue` pure domain logic and native sync bridge; (4) Added deep-link routing into task creation modal on `add_task`; (5) 82 unit tests passing; Built v1.1.4 APK. |
 | 2026-10-19 | Added customizable hourly repeating routines: (1) Added `recurring: 'hourly'` and `repeatIntervalHours` (1-24h) to Reminder contracts; (2) Added interactive Cadence picker in `ReminderEditModal` with quick pills (1h, 2h, 3h, 4h, 6h, 8h) and custom number input; (3) Added `calculateNextHourlyOccurrence` pure domain recurrence engine in `recurrence.ts`; (4) Auto-schedules next occurrence upon completion with speech feedback and AlarmManager sync; (5) Added voice recognition ("Remind me every X hours to...") in TypeScript & Android `VoiceParser.java`. 72 unit tests passing. Built APK successfully. |
 | 2026-10-19 | Connected companion avatar with interactive water intake inputs: (1) Added prominent `💧 I drank water` button and direct avatar tap-to-water hydration in-app; (2) Connected `useReminders` checklist completion directly to `useCompanionMood` state; (3) Added `isWaterIntakePhrase` intent recognition for voice ("I drank water") on floating overlay; (4) Enabled speech bubble single-tap water logging on overlay; (5) Synced native water timestamp across Android & web on resume. 66 unit tests passing. Built APK successfully. |

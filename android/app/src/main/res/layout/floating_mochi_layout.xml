@@ -60,6 +60,19 @@
             android:text="💧 Log Water" />
 
         <TextView
+            android:id="@+id/btn_menu_voice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/quick_menu_btn_bg"
+            android:textColor="#5B483A"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="🎙️ Voice Task" />
+
+        <TextView
             android:id="@+id/btn_menu_task"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

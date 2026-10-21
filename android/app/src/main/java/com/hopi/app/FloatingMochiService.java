@@ -13,6 +13,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ServiceInfo;
 import android.graphics.PixelFormat;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -68,6 +69,7 @@ public class FloatingMochiService extends Service {
     private View mochiAlertDot;
     private View mochiQuickMenu;
     private TextView btnMenuWater;
+    private TextView btnMenuVoice;
     private TextView btnMenuTask;
     private TextView btnMenuOpen;
     private WindowManager.LayoutParams params;
@@ -571,12 +573,19 @@ public class FloatingMochiService extends Service {
         Notification notification = createNotification();
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+                startForeground(NOTIFICATION_ID, notification,
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE | ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
             } else {
                 startForeground(NOTIFICATION_ID, notification);
             }
         } catch (Exception e) {
-            try { startForeground(NOTIFICATION_ID, notification); } catch (Exception ignored) {}
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+                } else {
+                    startForeground(NOTIFICATION_ID, notification);
+                }
+            } catch (Exception ignored) {}
         }
     }
 
@@ -594,6 +603,7 @@ public class FloatingMochiService extends Service {
             mochiAlertDot = floatingView.findViewById(R.id.mochi_alert_dot);
             mochiQuickMenu = floatingView.findViewById(R.id.mochi_quick_menu);
             btnMenuWater = floatingView.findViewById(R.id.btn_menu_water);
+            btnMenuVoice = floatingView.findViewById(R.id.btn_menu_voice);
             btnMenuTask = floatingView.findViewById(R.id.btn_menu_task);
             btnMenuOpen = floatingView.findViewById(R.id.btn_menu_open);
 
@@ -609,6 +619,15 @@ public class FloatingMochiService extends Service {
                     showSpeechBubble(cheer, 4500);
                     speakTts(cheer);
                     animHandler.postDelayed(() -> setAnimState(AnimState.IDLE), 2400);
+                });
+            }
+
+            if (btnMenuVoice != null) {
+                btnMenuVoice.setOnClickListener(v -> {
+                    hideQuickMenu();
+                    triggerHaptic();
+                    isVoiceRecording = true;
+                    startVoiceListening();
                 });
             }
 
@@ -633,7 +652,7 @@ public class FloatingMochiService extends Service {
                     CharSequence currentText = speechBubble.getText();
                     String textStr = currentText != null ? currentText.toString() : "";
                     boolean isRetryMsg = textStr.toLowerCase().contains("retry") || textStr.contains("Mic ready");
-                    boolean isMicOrAppMsg = textStr.contains("permission") || textStr.contains("open Hopi");
+                    boolean isMicOrAppMsg = textStr.contains("permission") || textStr.contains("Settings") || textStr.contains("open Hopi");
                     boolean isWaterMsg = textStr.contains("💧") ||
                             textStr.toLowerCase().contains("water") ||
                             textStr.toLowerCase().contains("hydrat");
@@ -642,7 +661,16 @@ public class FloatingMochiService extends Service {
                         triggerHaptic();
                         isVoiceRecording = true;
                         startVoiceListening();
-                    } else if (!isMicOrAppMsg && (isWaterMsg || getHoursSinceWater() >= 2.0f || animState == AnimState.SAD || (animState == AnimState.SLEEP && !isRestHours()))) {
+                    } else if (isMicOrAppMsg) {
+                        try {
+                            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                    Uri.parse("package:" + getPackageName()))
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(intent);
+                        } catch (Exception e) {
+                            openHopiApp(null);
+                        }
+                    } else if (isWaterMsg || getHoursSinceWater() >= 2.0f || animState == AnimState.SAD || (animState == AnimState.SLEEP && !isRestHours())) {
                         getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit()
                                 .putLong(PREF_LAST_WATER, System.currentTimeMillis()).apply();
                         isDeepSleep = false;
@@ -695,7 +723,7 @@ public class FloatingMochiService extends Service {
     private void startVoiceListening() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             isVoiceRecording = false;
-            showSpeechBubble("Mic permission needed! Tap here to open Hopi 🎙️", 6000);
+            showSpeechBubble("Mic permission needed! Tap to open Settings 🎙️", 6000);
             return;
         }
 
@@ -712,14 +740,22 @@ public class FloatingMochiService extends Service {
                     try { speechRecognizer.destroy(); } catch (Exception ignored) {}
                     speechRecognizer = null;
                 }
-                speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && SpeechRecognizer.isOnDeviceRecognitionAvailable(this)) {
+                    speechRecognizer = SpeechRecognizer.createOnDeviceSpeechRecognizer(this);
+                } else {
+                    speechRecognizer = SpeechRecognizer.createSpeechRecognizer(getApplicationContext());
+                }
                 speechRecognizer.setRecognitionListener(new VoiceRecognitionListener());
 
                 Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
                 intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
                 intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
                 intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
                 intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, getPackageName());
+                intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak a reminder");
+                intent.putExtra("android.speech.extra.DICTATION_MODE", true);
                 speechRecognizer.startListening(intent);
             } catch (Exception e) {
                 Log.e("FloatingMochi", "Failed to start speech recognition", e);
@@ -765,7 +801,13 @@ public class FloatingMochiService extends Service {
 
             switch (error) {
                 case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
-                    showSpeechBubble("Mic permission needed! Tap here to open Hopi 🎙️", 6000);
+                    showSpeechBubble("Mic permission needed! Tap to open Settings 🎙️", 6000);
+                    break;
+                case SpeechRecognizer.ERROR_AUDIO:
+                    showSpeechBubble("Audio recording error. Tap to retry 🎙️", 3500);
+                    break;
+                case SpeechRecognizer.ERROR_CLIENT:
+                    showSpeechBubble("Didn't catch that. Tap to retry! 🐰", 3500);
                     break;
                 case SpeechRecognizer.ERROR_NETWORK:
                 case SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
@@ -964,8 +1006,9 @@ public class FloatingMochiService extends Service {
                         float deltaX = event.getRawX() - initialTouchX;
                         float deltaY = event.getRawY() - initialTouchY;
                         float instantDeltaX = event.getRawX() - lastTouchX;
+                        float moveDist = (float) Math.hypot(deltaX, deltaY);
 
-                        if (!isDragging && (Math.abs(deltaX) > touchSlop || Math.abs(deltaY) > touchSlop)) {
+                        if (!isDragging && moveDist > touchSlop * 2.5f) {
                             isDragging = true;
                             animHandler.removeCallbacks(longPressRunnable);
                             isManualAwake = true;

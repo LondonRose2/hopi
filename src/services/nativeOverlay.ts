@@ -16,6 +16,8 @@ interface FloatingMochiPlugin {
   getLastWaterTime(): Promise<{ lastWaterTime: number }>;
   setOverdueStatus(options: { hasOverdue: boolean }): Promise<{ saved: boolean }>;
   consumeLaunchAction(): Promise<{ action?: string | null }>;
+  openAppSettings(): Promise<{ opened: boolean }>;
+  promptSpeechInput(): Promise<{ success: boolean; transcript: string; error?: string }>;
 }
 
 const NativeFloatingMochi = registerPlugin<FloatingMochiPlugin>('FloatingMochi');
@@ -229,6 +231,54 @@ export const floatingOverlayService = {
     } catch {
       return null;
     }
+  },
+
+  async openAppSettings(): Promise<boolean> {
+    if (!Capacitor.isNativePlatform()) return false;
+    try {
+      const res = await NativeFloatingMochi.openAppSettings();
+      return res?.opened ?? false;
+    } catch {
+      return false;
+    }
+  },
+
+  async promptSpeechInput(): Promise<{ success: boolean; transcript: string }> {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const res = await NativeFloatingMochi.promptSpeechInput();
+        return {
+          success: res?.success ?? false,
+          transcript: res?.transcript ?? '',
+        };
+      } catch {
+        return { success: false, transcript: '' };
+      }
+    }
+
+    return new Promise((resolve) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        resolve({ success: false, transcript: '' });
+        return;
+      }
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        recognition.onresult = (event: any) => {
+          const text = event.results?.[0]?.[0]?.transcript || '';
+          resolve({ success: Boolean(text), transcript: text });
+        };
+        recognition.onerror = () => resolve({ success: false, transcript: '' });
+        recognition.start();
+      } catch {
+        resolve({ success: false, transcript: '' });
+      }
+    });
   },
 };
 

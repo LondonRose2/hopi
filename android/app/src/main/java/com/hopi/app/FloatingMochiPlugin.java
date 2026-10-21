@@ -8,6 +8,8 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
+import android.speech.RecognizerIntent;
+import androidx.activity.result.ActivityResult;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 @CapacitorPlugin(name = "FloatingMochi")
@@ -117,6 +120,70 @@ public class FloatingMochiPlugin extends Plugin {
         ret.put("requested", !needed.isEmpty());
         ret.put("audioGranted", ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED);
         call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void openAppSettings(PluginCall call) {
+        try {
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            intent.setData(Uri.parse("package:" + getContext().getPackageName()));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            JSObject ret = new JSObject();
+            ret.put("opened", true);
+            call.resolve(ret);
+        } catch (Exception e) {
+            JSObject ret = new JSObject();
+            ret.put("opened", false);
+            ret.put("error", e.getMessage());
+            call.resolve(ret);
+        }
+    }
+
+    @PluginMethod
+    public void promptSpeechInput(PluginCall call) {
+        try {
+            Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+            intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak a reminder or routine...");
+            startActivityForResult(call, intent, "speechRecognitionResult");
+        } catch (Exception e) {
+            JSObject ret = new JSObject();
+            ret.put("success", false);
+            ret.put("transcript", "");
+            ret.put("error", e.getMessage());
+            call.resolve(ret);
+        }
+    }
+
+    @ActivityCallback
+    private void speechRecognitionResult(PluginCall call, ActivityResult result) {
+        if (call == null) return;
+        try {
+            if (result.getResultCode() == android.app.Activity.RESULT_OK && result.getData() != null) {
+                ArrayList<String> matches = result.getData().getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                JSObject ret = new JSObject();
+                if (matches != null && !matches.isEmpty()) {
+                    ret.put("success", true);
+                    ret.put("transcript", matches.get(0));
+                } else {
+                    ret.put("success", false);
+                    ret.put("transcript", "");
+                }
+                call.resolve(ret);
+            } else {
+                JSObject ret = new JSObject();
+                ret.put("success", false);
+                ret.put("transcript", "");
+                call.resolve(ret);
+            }
+        } catch (Exception e) {
+            JSObject ret = new JSObject();
+            ret.put("success", false);
+            ret.put("transcript", "");
+            ret.put("error", e.getMessage());
+            call.resolve(ret);
+        }
     }
 
     @PluginMethod
